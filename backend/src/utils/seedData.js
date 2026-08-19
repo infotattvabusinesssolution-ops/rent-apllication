@@ -30,15 +30,18 @@ const seedData = async () => {
     await SystemSettings.deleteMany({});
 
     console.log('Seeding Super Admin...');
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const email = (process.env.DEFAULT_ADMIN_EMAIL || 'admin@homescooter.com').toLowerCase();
+    const rawPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
     await Admin.create({
       adminId: 'ADM-901',
       name: 'Rahul Sharma',
-      email: 'admin@homescooter.com',
+      email,
       password: hashedPassword,
       role: 'SUPER_ADMIN',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
     });
+
 
     console.log('Seeding Users...');
     await User.insertMany([
