@@ -16,8 +16,10 @@ import { UserDetail } from '../pages/UserDetail';
 import { LeadsList } from '../pages/LeadsList';
 import { ReportsList } from '../pages/ReportsList';
 import { VisitorWinList } from '../pages/VisitorWinList';
+import { CategoryManagement } from '../pages/CategoryManagement';
 import { Analytics } from '../pages/Analytics';
 import { Settings } from '../pages/Settings';
+
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,8 +47,10 @@ export const AppRoutes = () => {
         <Route path="ads" element={<AdsList />} />
         <Route path="ads/pending" element={<PendingAds />} />
         <Route path="ads/:id" element={<AdDetail />} />
+        <Route path="categories" element={<CategoryManagement />} />
         
         <Route path="banners" element={<BannerList />} />
+
         <Route path="banners/create" element={<BannerCreate />} />
         
         <Route path="subscriptions" element={<SubscriptionsList />} />

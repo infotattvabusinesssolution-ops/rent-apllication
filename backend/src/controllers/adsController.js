@@ -14,8 +14,12 @@ const getAds = async (req, res) => {
       query.status = status;
     }
     if (category && category !== 'ALL') {
-      query.category = category;
+      query.$or = [
+        { category: { $regex: category, $options: 'i' } },
+        { propertySubType: { $regex: category, $options: 'i' } },
+      ];
     }
+
     if (isFeatured === 'true') {
       query.isFeatured = true;
     }

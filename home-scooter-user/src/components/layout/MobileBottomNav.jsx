@@ -1,67 +1,77 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Tag, PlusCircle, MessageSquare, User } from 'lucide-react';
+import { Home, Store, PlusCircle, MessageCircle, User } from 'lucide-react';
 
 export const MobileBottomNav = () => {
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg px-2 py-1.5">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg px-2 py-2">
       <div className="flex items-center justify-around max-w-md mx-auto relative">
+        {/* Home */}
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 p-1 text-[10px] font-bold transition-colors ${
-              isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              isActive ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
             }`
           }
         >
-          <Home className="w-5 h-5" />
-          <span>Home</span>
+          {({ isActive }) => (
+            <>
+              <Home className={`w-6 h-6 ${isActive ? 'fill-blue-600 text-blue-600' : ''}`} />
+              <span>Home</span>
+            </>
+          )}
         </NavLink>
 
+        {/* Sell */}
         <NavLink
           to="/sell"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 p-1 text-[10px] font-bold transition-colors ${
-              isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              isActive ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
             }`
           }
         >
-          <Tag className="w-5 h-5" />
+          <Store className="w-6 h-6" />
           <span>Sell</span>
         </NavLink>
 
-        {/* Center Primary Post Ad Button */}
+        {/* Post Ad (Center Plus Button) */}
         <NavLink
           to="/post-ad"
-          className="flex flex-col items-center gap-1 -mt-5"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              isActive ? 'text-blue-600 font-bold' : 'text-slate-600 hover:text-blue-600'
+            }`
+          }
         >
-          <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 ring-4 ring-white active:scale-95 transition-transform">
-            <PlusCircle className="w-6 h-6" />
-          </div>
-          <span className="text-[10px] font-black text-blue-600">Post Ad</span>
+          <PlusCircle className="w-7 h-7 text-slate-700 hover:text-blue-600 transition-colors" />
+          <span>Post Ad</span>
         </NavLink>
 
+        {/* Chats */}
         <NavLink
           to="/chats"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 p-1 text-[10px] font-bold transition-colors ${
-              isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              isActive ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
             }`
           }
         >
-          <MessageSquare className="w-5 h-5" />
+          <MessageCircle className="w-6 h-6" />
           <span>Chats</span>
         </NavLink>
 
+        {/* Profile */}
         <NavLink
           to="/profile"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 p-1 text-[10px] font-bold transition-colors ${
-              isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${
+              isActive ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
             }`
           }
         >
-          <User className="w-5 h-5" />
+          <User className="w-6 h-6" />
           <span>Profile</span>
         </NavLink>
       </div>

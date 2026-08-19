@@ -24,7 +24,9 @@ import { Notifications } from '../pages/Notifications';
 import { Profile } from '../pages/Profile';
 import { Subscription } from '../pages/Subscription';
 import { VisitorWin } from '../pages/VisitorWin';
+import { Filters } from '../pages/Filters';
 import { NotFound } from '../pages/NotFound';
+
 
 export const AppRoutes = () => {
   return (
@@ -42,12 +44,18 @@ export const AppRoutes = () => {
         <Route path="near-me" element={<NearMe />} />
         <Route path="new-ads" element={<NewAds />} />
         <Route path="top-viewed" element={<TopViewed />} />
+        <Route path="filters" element={<Filters />} />
         <Route path="search" element={<SearchResults />} />
+
         <Route path="ad/:id" element={<AdDetail />} />
+        <Route path="ads/:id" element={<AdDetail />} />
+
         <Route path="sell" element={<Sell />} />
-        <Route path="post-ad" element={<PostAd />} />
+        <Route path="post-ad" element={<MyAds />} />
         <Route path="my-ads" element={<MyAds />} />
+        <Route path="create-ad" element={<PostAd />} />
         <Route path="favorites" element={<Favorites />} />
+
         <Route path="chats" element={<Chats />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<Profile />} />

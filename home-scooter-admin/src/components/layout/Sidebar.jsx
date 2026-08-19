@@ -18,12 +18,14 @@ import {
   ChevronRight,
   Building2,
   Bike,
+  FolderTree,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/ads', label: 'All Ads', icon: Layers },
   { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badge: '124', badgeColor: 'bg-amber-500' },
+  { path: '/categories', label: 'Categories', icon: FolderTree },
   { path: '/banners', label: 'Banner Ads', icon: Image },
   { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard, badge: '2', badgeColor: 'bg-emerald-500' },
   { path: '/users', label: 'Users', icon: Users },
@@ -33,6 +35,7 @@ const NAV_ITEMS = [
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
+
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);

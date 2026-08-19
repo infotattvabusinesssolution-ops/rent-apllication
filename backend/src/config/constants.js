@@ -1,10 +1,16 @@
 const CATEGORIES = {
   LAYOUT_SITES: 'Layout Sites',
+  RENT_HOUSE_APARTMENTS: 'Rent: House & Apartments',
+  RENT_SHOP_OFFICES: 'Rent: Shop & Offices',
+  SALE_HOUSE_APARTMENTS: 'Sale: House & Apartments',
+  SALE_SHOP_OFFICES: 'Sale: Shop & Offices',
+  PG_GUEST_HOUSE: 'PG & Guest House',
   PROPERTIES: 'Properties',
   ELECTRIC_SCOOTERS: 'Electric Scooters',
   SERVICES: 'Services',
   OTHERS: 'Others',
 };
+
 
 const AD_STATUS = {
   PENDING: 'PENDING',

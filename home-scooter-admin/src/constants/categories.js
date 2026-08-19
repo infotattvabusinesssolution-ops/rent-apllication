@@ -1,5 +1,10 @@
 export const CATEGORIES = {
   LAYOUT_SITES: 'Layout Sites',
+  RENT_HOUSE_APARTMENTS: 'Rent: House & Apartments',
+  RENT_SHOP_OFFICES: 'Rent: Shop & Offices',
+  SALE_HOUSE_APARTMENTS: 'Sale: House & Apartments',
+  SALE_SHOP_OFFICES: 'Sale: Shop & Offices',
+  PG_GUEST_HOUSE: 'PG & Guest House',
   PROPERTIES: 'Properties',
   ELECTRIC_SCOOTERS: 'Electric Scooters',
   SERVICES: 'Services',
@@ -8,19 +13,35 @@ export const CATEGORIES = {
 
 export const CATEGORY_LIST = [
   CATEGORIES.LAYOUT_SITES,
+  CATEGORIES.RENT_HOUSE_APARTMENTS,
+  CATEGORIES.RENT_SHOP_OFFICES,
+  CATEGORIES.SALE_HOUSE_APARTMENTS,
+  CATEGORIES.SALE_SHOP_OFFICES,
+  CATEGORIES.PG_GUEST_HOUSE,
   CATEGORIES.PROPERTIES,
   CATEGORIES.ELECTRIC_SCOOTERS,
   CATEGORIES.SERVICES,
   CATEGORIES.OTHERS,
 ];
 
+export const PROPERTY_SUBCATEGORIES = {
+  RENT_HOUSE_APARTMENTS: 'Rent: House & Apartments',
+  RENT_SHOP_OFFICES: 'Rent: Shop & Offices',
+  SALE_HOUSE_APARTMENTS: 'Sale: House & Apartments',
+  SALE_SHOP_OFFICES: 'Sale: Shop & Offices',
+  PG_GUEST_HOUSE: 'PG & Guest House',
+};
+
 export const PROPERTY_SUBTYPES = [
-  'Rent: House & Apartments',
-  'Rent: Shop & Offices',
-  'Sale: House & Apartments',
-  'Sale: Shop & Offices',
-  'PG & Guest House',
+  CATEGORIES.RENT_HOUSE_APARTMENTS,
+  CATEGORIES.RENT_SHOP_OFFICES,
+  CATEGORIES.SALE_HOUSE_APARTMENTS,
+  CATEGORIES.SALE_SHOP_OFFICES,
+  CATEGORIES.PG_GUEST_HOUSE,
 ];
+
+
+
 
 export const AD_STATUS = {
   PENDING: 'PENDING',

@@ -6,7 +6,8 @@ let localAds = [...MOCK_ADS];
 export const adsApi = {
   getAds: async (params = {}) => {
     try {
-      return await axiosClient.get('/api/v1/ads', { params });
+      const res = await axiosClient.get('/v1/user/ads', { params });
+      return res.data;
     } catch (err) {
       let result = localAds.filter((ad) => ad.status === 'APPROVED');
       
@@ -51,7 +52,8 @@ export const adsApi = {
 
   getAdById: async (id) => {
     try {
-      return await axiosClient.get(`/api/v1/ads/${id}`);
+      const res = await axiosClient.get(`/v1/user/ads/${id}`);
+      return res.data;
     } catch (err) {
       const found = localAds.find((ad) => ad.id === id);
       if (found) return found;
@@ -62,7 +64,8 @@ export const adsApi = {
   postAd: async (adData) => {
     try {
       const config = adData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
-      return await axiosClient.post('/api/v1/ads', adData, config);
+      const res = await axiosClient.post('/v1/user/ads', adData, config);
+      return res.data;
     } catch (err) {
       const newAd = {
         id: `AD${Math.floor(1000 + Math.random() * 9000)}`,
@@ -84,7 +87,7 @@ export const adsApi = {
         timeAgo: 'Just now',
         viewsCount: 1,
         formattedViews: '1 view',
-        status: 'PENDING_APPROVAL',
+        status: 'APPROVED',
         isHighDemand: false,
         isFeatured: false,
         isFavorite: false,
@@ -93,15 +96,16 @@ export const adsApi = {
       return {
         success: true,
         ad: newAd,
-        status: 'PENDING_APPROVAL',
-        message: 'Your advertisement has been submitted successfully and is pending admin approval.',
+        status: 'APPROVED',
+        message: 'Your advertisement has been submitted successfully.',
       };
     }
   },
 
   getMyAds: async (status = 'ALL') => {
     try {
-      return await axiosClient.get('/api/v1/ads/my-ads', { params: { status } });
+      const res = await axiosClient.get('/v1/user/my-ads', { params: { status } });
+      return res.data;
     } catch (err) {
       let myAds = localAds.filter((ad) => ad.posterId === 'USR-8821' || ad.posterName === 'Gyana Prakash' || ad.posterName === 'Hoskote Realties');
       if (status && status !== 'ALL') {
@@ -110,6 +114,28 @@ export const adsApi = {
       return { data: myAds, total: myAds.length };
     }
   },
+
+  updateAd: async (id, adData) => {
+    try {
+      const res = await axiosClient.put(`/v1/user/my-ads/${id}`, adData);
+      return res.data;
+    } catch (err) {
+      localAds = localAds.map((ad) => (ad.id === id ? { ...ad, ...adData } : ad));
+      return { success: true, message: 'Ad updated' };
+    }
+  },
+
+  deleteAd: async (id) => {
+    try {
+      const res = await axiosClient.delete(`/v1/user/my-ads/${id}`);
+      return res.data;
+    } catch (err) {
+      localAds = localAds.filter((ad) => ad.id !== id);
+      return { success: true, message: 'Ad deleted' };
+    }
+  },
+
+
 
   toggleFavorite: async (id) => {
     try {

@@ -2,22 +2,34 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { adsApi } from '../api/adsApi';
-import { SearchBar } from '../components/marketplace/SearchBar';
-import { FeaturedCarousel } from '../components/marketplace/FeaturedCarousel';
-import { CategoryCard } from '../components/marketplace/CategoryCard';
-import { ListingGrid } from '../components/marketplace/ListingGrid';
+import { categoryApi } from '../api/categoryApi';
+import { useAuth } from '../context/AuthContext';
+
 import { LocationSelectorModal } from '../components/marketplace/LocationSelectorModal';
 import { FilterDrawer } from '../components/marketplace/FilterDrawer';
-import { CATEGORIES, PROPERTY_SUBCATEGORY_LIST } from '../constants/categories';
-import { Button } from '../components/common/Button';
-import { Card } from '../components/common/Card';
-import { Badge } from '../components/common/Badge';
-import { Sparkles, MapPin, ArrowRight, ShieldCheck, Crown, Flame, Clock } from 'lucide-react';
+import { formatCurrency } from '../utils/formatters';
+import {
+  MapPin,
+  ChevronDown,
+  SlidersHorizontal,
+  Search,
+  Star,
+  Heart,
+  Flame,
+  Clock,
+  Sparkles,
+  Sliders,
+  Target,
+} from 'lucide-react';
 
 export const Home = () => {
   const navigate = useNavigate();
+  const { selectedLocation } = useAuth();
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('ALL');
+  const [favorites, setFavorites] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ category: 'ALL', distanceKm: 50, sort: 'newest' });
 
   const { data: adsResult, isLoading } = useQuery({
@@ -25,165 +37,344 @@ export const Home = () => {
     queryFn: () => adsApi.getAds(),
   });
 
-  const ads = adsResult?.data || [];
-  const layoutSites = ads.filter((a) => a.category === CATEGORIES.LAYOUT_SITES).slice(0, 4);
-  const scooters = ads.filter((a) => a.category === CATEGORIES.ELECTRIC_SCOOTERS).slice(0, 4);
+  const { data: categoryResult } = useQuery({
+    queryKey: ['userCategories'],
+    queryFn: () => categoryApi.getCategories(),
+  });
+
+  const allAds = adsResult?.data || [];
+  const featuredAds = allAds.filter((ad) => ad.isFeatured || ad.status === 'APPROVED').slice(0, 5);
+  
+  // Filtered explore listings
+  const exploreListings = activeCategory === 'ALL'
+    ? allAds
+    : allAds.filter((ad) => ad.category === activeCategory);
+
+
+  const toggleFavorite = (e, adId) => {
+    e.stopPropagation();
+    setFavorites((prev) => ({ ...prev, [adId]: !prev[adId] }));
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Category avatar config
+  const categoriesList = [
+    {
+      id: 'ALL',
+      name: 'All',
+      borderClass: 'bg-blue-600 text-amber-300 shadow-md shadow-blue-500/30',
+      isStar: true,
+      icon: null,
+    },
+    {
+      id: 'Layout Sites',
+      name: 'Layout Sites',
+      borderClass: 'border-2 border-amber-300 bg-amber-50/40 text-amber-600',
+      icon: '🗺️',
+      path: '/categories/layout-sites',
+    },
+    {
+      id: 'Properties',
+      name: 'Properties',
+      borderClass: 'border-2 border-blue-300 bg-blue-50/40 text-blue-600',
+      icon: '🏢',
+      path: '/categories/properties',
+    },
+    {
+      id: 'Electric Scooters',
+      name: 'Electric Scooters',
+      borderClass: 'border-2 border-yellow-400 bg-yellow-50/40 text-yellow-600',
+      icon: '🛵',
+      path: '/categories/electric-scooters',
+    },
+    {
+      id: 'Services',
+      name: 'Services',
+      borderClass: 'border-2 border-purple-300 bg-purple-50/40 text-purple-600',
+      icon: '🛠️',
+      path: '/categories/services',
+    },
+    {
+      id: 'Others',
+      name: 'Others',
+      borderClass: 'border-2 border-slate-300 bg-slate-50/40 text-slate-600',
+      icon: '📦',
+      path: '/categories/others',
+    },
+  ];
 
   return (
-    <div className="space-y-12 pb-8">
-      {/* Hero Section */}
-      <section className="relative rounded-3xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-800 text-white p-6 sm:p-10 md:p-12 overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-96 h-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-80 h-80 rounded-full bg-emerald-400/20 blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-bold text-blue-100 border border-white/20">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Bangalore's #1 Property & EV Scooter Marketplace</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            Find Your Perfect Place, Property or EV Scooter
-          </h1>
-
-          <p className="text-xs sm:text-base text-blue-100/90 font-medium leading-relaxed max-w-2xl">
-            Discover verified plots, rental homes, electric scooters & local services around you. Buy, rent, sell and connect with trusted sellers directly.
-          </p>
-
-          <div className="pt-2">
-            <SearchBar
-              onOpenLocation={() => setIsLocationOpen(true)}
-              onOpenFilter={() => setIsFilterOpen(true)}
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-blue-100 pt-2">
-            <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-400" /> 100% Verified Sellers</span>
-            <span className="flex items-center gap-1.5"><Crown className="w-4 h-4 text-amber-300" /> ₹100 Ad-Free Membership</span>
-            <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-teal-300" /> Near Me Radius Filter</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Carousel */}
-      <section>
-        <FeaturedCarousel listings={ads} />
-      </section>
-
-      {/* Top Level Categories */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Explore Categories</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Browse verified marketplace listings by category</p>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/categories')}>
-            View All
-          </Button>
+    <div className="space-y-6 pb-20 max-w-lg mx-auto px-1 sm:px-0">
+      {/* Location Bar & Filter Header */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <div
+          onClick={() => setIsLocationOpen(true)}
+          className="flex items-center gap-2 cursor-pointer group"
+        >
+          <MapPin className="w-5 h-5 text-blue-600 fill-blue-600 shrink-0" />
+          <span className="font-serif text-lg sm:text-xl font-bold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
+            {selectedLocation || 'Bangalore, Karnataka'}
+          </span>
+          <ChevronDown className="w-4 h-4 text-slate-500" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {Object.values(CATEGORIES).map((cat) => (
-            <CategoryCard key={cat} category={cat} />
-          ))}
-        </div>
-      </section>
+        <button
+          onClick={() => setIsFilterOpen(true)}
+          className="w-10 h-10 rounded-full bg-slate-100/90 hover:bg-slate-200/80 flex items-center justify-center text-slate-700 transition-colors cursor-pointer shrink-0"
+          aria-label="Filter options"
+        >
+          <SlidersHorizontal className="w-5 h-5" />
+        </button>
+      </div>
 
-      {/* Property Subcategories Bar */}
-      <section className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 p-6 rounded-2xl border border-blue-100 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-black text-slate-900">Popular Property Types</h3>
-            <p className="text-xs text-slate-500">Rentals, sales, shops, offices and PG listings</p>
-          </div>
+      {/* Search Input Bar */}
+      <form onSubmit={handleSearchSubmit} className="relative">
+        <div className="relative rounded-full border border-slate-200/90 bg-white py-3 px-4 shadow-xs flex items-center gap-3 w-full hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+          <Search className="w-5 h-5 text-slate-400 shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for properties, scooters, services..."
+            className="w-full bg-transparent font-serif text-slate-800 placeholder:text-slate-400 text-sm font-light focus:outline-none"
+          />
         </div>
+      </form>
 
-        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
-          {PROPERTY_SUBCATEGORY_LIST.map((sub) => (
-            <button
-              key={sub}
-              onClick={() => navigate(`/properties/${encodeURIComponent(sub)}`)}
-              className="px-4 py-2.5 bg-white hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold text-slate-800 border border-slate-200/80 shadow-xs transition-all shrink-0 cursor-pointer"
+      {/* Category Avatar Circular Icons Row */}
+      <div className="flex items-center gap-4 overflow-x-auto scrollbar-none py-1">
+        {categoriesList.map((cat) => {
+          const isSelected = activeCategory === cat.id;
+          return (
+            <div
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className="flex flex-col items-center shrink-0 cursor-pointer group"
             >
-              {sub}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Layout Sites Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Featured Layout Sites & Plots</h2>
-            <p className="text-xs text-slate-500">Gated community plots, DC converted land & sites</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => navigate('/categories/layout-sites')}>
-            See All Plots
-          </Button>
-        </div>
-
-        <ListingGrid listings={layoutSites} isLoading={isLoading} />
-      </section>
-
-      {/* Electric Scooters Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Electric Scooters (EV Rentals & Sales)</h2>
-            <p className="text-xs text-slate-500">Ather, Ola, TVS iQube & high speed rentals</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => navigate('/categories/electric-scooters')}>
-            See All EVs
-          </Button>
-        </div>
-
-        <ListingGrid listings={scooters} isLoading={isLoading} />
-      </section>
-
-      {/* Visitor Win Promotional Banner */}
-      <section>
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-3xl p-6 sm:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
-          <div className="space-y-2 text-center md:text-left">
-            <Badge variant="warning">Special Promo</Badge>
-            <h3 className="text-xl sm:text-2xl font-black">Visitor Win Event 2026</h3>
-            <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
-              Register now for your opportunity to participate in our exclusive visitor contest and win special prizes!
-            </p>
-          </div>
-          <Button
-            size="lg"
-            variant="secondary"
-            onClick={() => navigate('/visitor-win')}
-            className="shrink-0 bg-white text-emerald-800 hover:bg-emerald-50 font-black"
-          >
-            Register Now <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </section>
-
-      {/* ₹100 Subscription Membership Card */}
-      <section>
-        <Card className="bg-gradient-to-br from-blue-900 via-slate-900 to-indigo-950 text-white p-6 sm:p-8 rounded-3xl border-blue-800 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-3 text-center md:text-left">
-            <div className="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-300 text-xs font-black px-3 py-1 rounded-full border border-amber-400/30">
-              <Crown className="w-4 h-4" /> Subscriber Exclusive
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                  cat.isStar
+                    ? cat.borderClass
+                    : `${cat.borderClass} ${isSelected ? 'ring-2 ring-blue-600 ring-offset-2 scale-105' : 'group-hover:scale-105'}`
+                }`}
+              >
+                {cat.isStar ? (
+                  <Star className="w-8 h-8 fill-amber-300 text-amber-300" />
+                ) : (
+                  <span className="text-2xl select-none">{cat.icon}</span>
+                )}
+              </div>
+              <span
+                className={`text-xs font-semibold mt-1.5 whitespace-nowrap ${
+                  isSelected ? 'text-blue-600 font-bold' : 'text-slate-700'
+                }`}
+              >
+                {cat.name}
+              </span>
             </div>
-            <h3 className="text-2xl font-black">Become a Member for Just ₹100/-</h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-              Unlock 10 Days (3 + 7 Days) of 100% Advertisement-Free marketplace browsing, direct WhatsApp updates, personal credentials, and priority callback access.
+          );
+        })}
+      </div>
+
+      {/* Featured Ads Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-serif text-xl font-bold text-slate-900">Featured Ads</h2>
+          <button
+            onClick={() => navigate('/search?tab=featured')}
+            className="text-blue-600 font-bold text-sm hover:underline cursor-pointer"
+          >
+            View All
+          </button>
+        </div>
+
+        <div className="flex gap-4 overflow-x-auto scrollbar-none pb-2">
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="w-60 h-64 rounded-3xl bg-slate-100 animate-pulse shrink-0" />
+              ))
+            : featuredAds.map((ad) => (
+                <div
+                  key={ad.id}
+                  onClick={() => navigate(`/ads/${ad.id}`)}
+                  className="w-60 sm:w-64 shrink-0 bg-white rounded-3xl border border-slate-100/90 shadow-xs overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-md transition-all group"
+                >
+                  <div className="h-44 bg-slate-100 rounded-t-3xl relative overflow-hidden flex items-center justify-center">
+                    {ad.imageUrls?.[0] ? (
+                      <img
+                        src={ad.imageUrls[0]}
+                        alt={ad.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="text-4xl">
+                        {ad.category === 'Layout Sites' ? '🗺️' : ad.category === 'Electric Scooters' ? '🛵' : '🏢'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 bg-white space-y-1">
+                    <h3 className="font-serif font-bold text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      {ad.title}
+                    </h3>
+                    <p className="text-blue-600 font-black text-base font-serif">
+                      {formatCurrency(ad.price)}
+                    </p>
+                    <p className="text-slate-400 text-xs font-light truncate">
+                      {ad.location}
+                    </p>
+                  </div>
+                </div>
+              ))}
+        </div>
+      </div>
+
+      {/* Top Categories Section (Soft Tinted Cards Grid) */}
+      <div className="space-y-3">
+        <h2 className="font-serif text-xl font-bold text-slate-900">Top Categories</h2>
+
+        <div className="grid grid-cols-2 gap-3.5">
+          {/* Near Me Card */}
+          <div
+            onClick={() => navigate('/near-me')}
+            className="bg-[#f0f6ff] border border-blue-100/80 rounded-2xl p-4 cursor-pointer hover:bg-blue-100/60 transition-all group"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🎯</span>
+              <h3 className="font-serif font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                Near Me
+              </h3>
+            </div>
+            <p className="text-slate-500 text-xs mt-1 font-light">
+              Radar view around 10km
             </p>
           </div>
-          <Button
-            size="lg"
-            variant="success"
-            onClick={() => navigate('/subscription')}
-            className="shrink-0 font-black"
+
+          {/* New Ads Card */}
+          <div
+            onClick={() => navigate('/new-ads')}
+            className="bg-[#f0fdf4] border border-emerald-100/80 rounded-2xl p-4 cursor-pointer hover:bg-emerald-100/60 transition-all group"
           >
-            Subscribe for ₹100
-          </Button>
-        </Card>
-      </section>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🆕</span>
+              <h3 className="font-serif font-bold text-slate-900 text-base group-hover:text-emerald-700 transition-colors">
+                New Ads
+              </h3>
+            </div>
+            <p className="text-slate-500 text-xs mt-1 font-light">
+              Freshly posted listings
+            </p>
+          </div>
+
+          {/* Top Viewed Card */}
+          <div
+            onClick={() => navigate('/top-viewed')}
+            className="bg-[#fffbeb] border border-amber-100/80 rounded-2xl p-4 cursor-pointer hover:bg-amber-100/60 transition-all group"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🔥</span>
+              <h3 className="font-serif font-bold text-slate-900 text-base group-hover:text-amber-700 transition-colors">
+                Top Viewed
+              </h3>
+            </div>
+            <p className="text-slate-500 text-xs mt-1 font-light">
+              High traffic popular ads
+            </p>
+          </div>
+
+          {/* Filters Card */}
+          <div
+            onClick={() => setIsFilterOpen(true)}
+            className="bg-[#faf5ff] border border-purple-100/80 rounded-2xl p-4 cursor-pointer hover:bg-purple-100/60 transition-all group"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">⚙️</span>
+              <h3 className="font-serif font-bold text-slate-900 text-base group-hover:text-purple-700 transition-colors">
+                Filters
+              </h3>
+            </div>
+            <p className="text-slate-500 text-xs mt-1 font-light">
+              Customize search & radius
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Explore Listings Section */}
+      <div className="space-y-3.5">
+        <div className="flex items-center">
+          <h2 className="font-serif text-xl font-bold text-slate-900">Explore Listings</h2>
+          <span className="ml-2.5 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">
+            {exploreListings.length}
+          </span>
+        </div>
+
+        <div className="space-y-3.5">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
+            ))
+          ) : exploreListings.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-2xl border border-slate-100">
+              <p className="font-serif text-slate-600 font-medium">No listings found in this category.</p>
+            </div>
+          ) : (
+            exploreListings.map((ad) => (
+              <div
+                key={ad.id}
+                onClick={() => navigate(`/ads/${ad.id}`)}
+                className="bg-white rounded-2xl p-3 border border-slate-100/90 shadow-xs flex items-center justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
+              >
+                {/* Left Thumbnail Box */}
+                <div className="w-24 h-24 rounded-2xl bg-slate-100/80 shrink-0 overflow-hidden flex items-center justify-center relative border border-slate-100">
+                  {ad.imageUrls?.[0] ? (
+                    <img
+                      src={ad.imageUrls[0]}
+                      alt={ad.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <span className="text-3xl select-none">
+                      {ad.category === 'Layout Sites' ? '🗺️' : ad.category === 'Electric Scooters' ? '🛵' : '🏢'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Middle Details Box */}
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <h3 className="font-serif font-bold text-slate-900 text-sm truncate group-hover:text-blue-600 transition-colors">
+                    {ad.title}
+                  </h3>
+                  <p className="text-blue-600 font-black text-base font-serif">
+                    {formatCurrency(ad.price)}
+                  </p>
+                  <p className="text-slate-400 text-xs font-light truncate">
+                    {ad.location}
+                  </p>
+                </div>
+
+                {/* Right Heart Favorite Icon */}
+                <button
+                  onClick={(e) => toggleFavorite(e, ad.id)}
+                  className="p-2 text-slate-300 hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                  aria-label="Add to favorites"
+                >
+                  <Heart
+                    className={`w-5 h-5 ${
+                      favorites[ad.id] ? 'fill-red-500 text-red-500' : 'text-slate-300'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
 
       {/* Location & Filter Modals */}
       <LocationSelectorModal isOpen={isLocationOpen} onClose={() => setIsLocationOpen(false)} />

@@ -4,9 +4,11 @@ import { CATEGORIES, CATEGORY_LIST, PROPERTY_SUBCATEGORY_LIST } from '../constan
 export const categoryApi = {
   getCategories: async () => {
     try {
-      return await axiosClient.get('/api/v1/categories');
+      const res = await axiosClient.get('/v1/user/categories');
+      return res.data;
     } catch (err) {
       return {
+        success: true,
         data: CATEGORY_LIST.map((name) => ({
           title: name,
           slug: name.toLowerCase().replace(/ /g, '-'),
@@ -16,3 +18,4 @@ export const categoryApi = {
     }
   },
 };
+

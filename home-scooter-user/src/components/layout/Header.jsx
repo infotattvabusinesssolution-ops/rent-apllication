@@ -26,6 +26,8 @@ export const Header = () => {
 
   const navLinks = [
     { label: 'Home', path: '/' },
+    { label: 'Sell', path: '/sell' },
+    { label: 'Post Ad', path: '/post-ad' },
     { label: 'Categories', path: '/categories' },
     { label: 'Near Me', path: '/near-me' },
     { label: 'New Ads', path: '/new-ads' },
@@ -33,9 +35,12 @@ export const Header = () => {
     { label: 'Visitor Win', path: '/visitor-win', highlight: true },
   ];
 
+
+
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+      <header className="hidden lg:block sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-4">
             {/* Left: Brand Logo & Location */}

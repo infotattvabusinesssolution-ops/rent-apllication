@@ -430,8 +430,72 @@ export const AdDetail = () => {
               </div>
             </CardBody>
           </Card>
+
+          {/* Customer Verified Slip (CVS) Inspector Card */}
+          <Card className="border border-blue-200 overflow-hidden shadow-xs">
+            <div className="bg-[#1e293b] text-white p-3.5 text-center">
+              <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase block">Verification Slip</span>
+              <h4 className="font-serif font-black text-sm text-white tracking-wide">CUSTOMER VERIFIED SLIP (CVS)</h4>
+            </div>
+
+            <CardBody className="p-4 space-y-3 text-xs font-serif">
+              <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>1. Customer Name:</span>
+                  <span className="font-bold text-slate-900">{ad.posterName}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>2. Contact No:</span>
+                  <span className="font-bold text-blue-600">{ad.posterPhone}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>3. Area / Location:</span>
+                  <span className="font-bold text-slate-900">{ad.location}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>4. Requirement:</span>
+                  <span className="font-bold text-slate-900">{ad.title}</span>
+                </div>
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>5. Verification Status:</span>
+                  <span className="font-bold text-emerald-600">✓ VERIFIED SLIP</span>
+                </div>
+              </div>
+
+              <div className="text-center py-0.5">
+                <span className="bg-blue-600 text-white font-bold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                  SENT TO DEALER
+                </span>
+              </div>
+
+              <div className="space-y-1.5 bg-blue-50/60 p-3 rounded-xl border border-blue-100">
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>6. Dealer Name:</span>
+                  <span className="font-bold text-slate-900">Infotattva Verified Partner</span>
+                </div>
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>7. Business Name:</span>
+                  <span className="font-bold text-slate-900">Home Scooter Solutions</span>
+                </div>
+                <div className="flex justify-between text-slate-600 text-[11px]">
+                  <span>8. WhatsApp Contact:</span>
+                  <span className="font-mono font-bold text-emerald-600">{ad.posterPhone}</span>
+                </div>
+              </div>
+
+              <a
+                href={`https://wa.me/91${ad.posterPhone}?text=${encodeURIComponent(`Hello, admin inquiring about CVS for listing #${ad.id}: ${ad.title}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full bg-[#25D366] hover:bg-[#1ebd59] text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer block text-center"
+              >
+                <span>SEND TO WHATSAPP</span>
+              </a>
+            </CardBody>
+          </Card>
         </div>
       </div>
+
 
       {/* Image Lightbox */}
       <ImageLightbox

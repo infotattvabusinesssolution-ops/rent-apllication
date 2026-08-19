@@ -1,34 +1,33 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { adsApi } from '../api/adsApi';
-import { CATEGORIES, CATEGORY_LIST, PROPERTY_SUBCATEGORY_LIST, LOCATIONS } from '../constants/categories';
-import { Button } from '../components/common/Button';
-import { Card } from '../components/common/Card';
+import { CATEGORIES } from '../constants/categories';
 import { toast } from 'sonner';
-import { Check, Upload, Image as ImageIcon, X, ArrowRight, ArrowLeft, ShieldAlert } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
+  X,
+} from 'lucide-react';
 
 export const PostAd = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Category, 2: Details, 3: Photos & Review
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get('category') || CATEGORIES.LAYOUT_SITES;
+
+  const [step, setStep] = useState(searchParams.get('category') ? 2 : 1); // 1: Select Category, 2: Ad Details & Photos
+  const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
 
   // Form State
-  const [category, setCategory] = useState(CATEGORIES.LAYOUT_SITES);
-  const [propertySubType, setPropertySubType] = useState(PROPERTY_SUBCATEGORY_LIST[0]);
+  const [category, setCategory] = useState(initialCategory);
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
-  const [priceUnit, setPriceUnit] = useState('₹');
-  const [location, setLocation] = useState(LOCATIONS[0]);
+  const [location, setLocation] = useState('');
+  const [dimensions, setDimensions] = useState('');
   const [description, setDescription] = useState('');
 
-  // Category Specifics
-  const [dimensions, setDimensions] = useState('');
-  const [facing, setFacing] = useState('East Facing');
-  const [bhk, setBhk] = useState('2 BHK');
-  const [batteryRangeKm, setBatteryRangeKm] = useState('');
-  const [brandModel, setBrandModel] = useState('');
-
-  // Images
+  // Photos State
   const [images, setImages] = useState([
     'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
   ]);
@@ -41,6 +40,21 @@ export const PostAd = () => {
     },
   });
 
+  const handleImageFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImages((prev) => [...prev, reader.result]);
+        };
+        reader.readAsDataURL(file);
+      });
+      toast.success(`${files.length} photo(s) added`);
+    }
+  };
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title || !price || !description) {
@@ -50,316 +64,384 @@ export const PostAd = () => {
 
     const payload = {
       category,
-      propertySubType: category === CATEGORIES.PROPERTIES ? propertySubType : null,
       title,
       price: Number(price),
-      priceUnit,
-      location,
+      priceUnit: '₹',
+      location: location || 'Bangalore, Karnataka',
       description,
       dimensions,
-      facing,
-      bhk,
-      batteryRangeKm,
-      brandModel,
       imageUrls: images,
     };
 
     postMutation.mutate(payload);
   };
 
+  const categoriesList = [
+    {
+      id: 'Layout Sites',
+      title: 'Layout Sites',
+      desc: 'Plots, Land & Gated Sites',
+      icon: '🗺️',
+      bg: 'bg-[#fffbeb]',
+      arrowColor: 'text-amber-700',
+    },
+    {
+      id: 'Properties',
+      title: 'Properties',
+      desc: 'Rent / Sale Houses, Shops, Offices & PGs',
+      icon: '🏢',
+      bg: 'bg-[#f0f6ff]',
+      arrowColor: 'text-blue-600',
+    },
+    {
+      id: 'Electric Scooters',
+      title: 'Electric Scooters',
+      desc: 'Daily & Monthly EV Rentals',
+      icon: '🛵',
+      bg: 'bg-[#fefce8]',
+      arrowColor: 'text-amber-700',
+    },
+    {
+      id: 'Services',
+      title: 'Services',
+      desc: 'Interiors, Maintenance & Repairs',
+      icon: '🛠️',
+      bg: 'bg-[#faf5ff]',
+      arrowColor: 'text-purple-600',
+    },
+    {
+      id: 'Others',
+      title: 'Others',
+      desc: 'Miscellaneous & Partner Ads',
+      icon: '📦',
+      bg: 'bg-[#f0fdf4]',
+      arrowColor: 'text-teal-600',
+    },
+  ];
+
+  const propertySubcategories = [
+    {
+      title: 'Rent: House & Apartments',
+      desc: 'Rental houses, flats & apartments',
+      icon: '🏠',
+    },
+    {
+      title: 'Rent: Shop & Offices',
+      desc: 'Commercial shops, showrooms & office spaces',
+      icon: '🏬',
+    },
+    {
+      title: 'Sale: House & Apartments',
+      desc: 'Houses, flats & villas for purchase',
+      icon: '🏡',
+    },
+    {
+      title: 'Sale: Shop & Offices',
+      desc: 'Commercial shops & offices for sale',
+      icon: '🏢',
+    },
+    {
+      title: 'PG & Guest House',
+      desc: 'Paying guest accommodations, hostels & co-living',
+      icon: '🛏️',
+    },
+  ];
+
+  const handleCategoryClick = (catId) => {
+    if (catId === 'Properties') {
+      setIsPropertyModalOpen(true);
+    } else {
+      setCategory(catId);
+      setStep(2);
+    }
+  };
+
+  const handlePropertySubClick = (subTitle) => {
+    setCategory(subTitle);
+    setIsPropertyModalOpen(false);
+    setStep(2);
+  };
+
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-12">
-      {/* Wizard Header Progress Bar */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900">Post New Advertisement</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Reach thousands of active buyers and renters across Bangalore</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 pt-2">
-          <div className={`p-2.5 rounded-xl border text-center transition-all ${step >= 1 ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-bold' : 'border-slate-200 text-slate-400'}`}>
-            <span className="text-[10px] uppercase block tracking-wider">Step 1</span>
-            <span className="text-xs">Category</span>
-          </div>
-          <div className={`p-2.5 rounded-xl border text-center transition-all ${step >= 2 ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-bold' : 'border-slate-200 text-slate-400'}`}>
-            <span className="text-[10px] uppercase block tracking-wider">Step 2</span>
-            <span className="text-xs">Listing Details</span>
-          </div>
-          <div className={`p-2.5 rounded-xl border text-center transition-all ${step >= 3 ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-bold' : 'border-slate-200 text-slate-400'}`}>
-            <span className="text-[10px] uppercase block tracking-wider">Step 3</span>
-            <span className="text-xs">Photos & Publish</span>
-          </div>
-        </div>
-      </div>
-
-      {/* STEP 1: CATEGORY SELECTION */}
+    <div className="space-y-6 pb-24 max-w-lg mx-auto px-1 sm:px-0">
+      {/* STEP 1: SELECT CATEGORY */}
       {step === 1 && (
-        <Card className="p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-black text-slate-900">What category do you want to post in?</h3>
-            <p className="text-xs text-slate-500 mt-1">Select the primary category for your listing</p>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 -ml-2 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Select Category
+            </h1>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {CATEGORY_LIST.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setCategory(cat)}
-                className={`p-4 rounded-xl border text-left font-bold text-sm transition-all cursor-pointer flex items-center justify-between ${
-                  category === cat
-                    ? 'border-blue-600 bg-blue-50/60 text-blue-900 shadow-xs'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-800'
-                }`}
+          {/* Category Cards List */}
+          <div className="space-y-3.5">
+            {categoriesList.map((cat) => (
+              <div
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.id)}
+                className="bg-white rounded-2xl p-4 border border-slate-100/90 shadow-xs flex items-center justify-between gap-4 cursor-pointer hover:shadow-md transition-all group"
               >
-                <span>{cat}</span>
-                {category === cat && <Check className="w-5 h-5 text-blue-600" />}
-              </button>
+                {/* Left Icon */}
+                <div className={`w-14 h-14 rounded-2xl ${cat.bg} flex items-center justify-center text-2xl shrink-0 border border-slate-100/50`}>
+                  <span className="select-none">{cat.icon}</span>
+                </div>
+
+                {/* Middle Details */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-serif font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                    {cat.title}
+                  </h3>
+                  <p className="text-slate-400 text-xs font-light mt-0.5 leading-normal">
+                    {cat.desc}
+                  </p>
+                </div>
+
+                {/* Right Arrow */}
+                <ChevronRight className={`w-5 h-5 ${cat.arrowColor} shrink-0`} />
+              </div>
             ))}
           </div>
-
-          {category === CATEGORIES.PROPERTIES && (
-            <div className="space-y-2 pt-3 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Select Property Subcategory
-              </label>
-              <div className="space-y-2">
-                {PROPERTY_SUBCATEGORY_LIST.map((sub) => (
-                  <label
-                    key={sub}
-                    className={`flex items-center gap-3 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
-                      propertySubType === sub
-                        ? 'border-blue-600 bg-blue-50/60 text-blue-900'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="propertySubType"
-                      checked={propertySubType === sub}
-                      onChange={() => setPropertySubType(sub)}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <span>{sub}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setStep(2)}>
-              Next Step: Details <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        </Card>
+        </div>
       )}
 
-      {/* STEP 2: DETAILS FORM */}
+      {/* SELECT PROPERTY CATEGORY MODAL */}
+      {isPropertyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-xs animate-in fade-in-50 duration-200">
+          <div className="fixed inset-0" onClick={() => setIsPropertyModalOpen(false)} />
+
+          <div className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl p-5 border-t border-slate-100 max-h-[85vh] overflow-y-auto z-10 space-y-4 animate-in slide-in-from-bottom duration-300">
+            <div>
+              <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                Select Property Category
+              </h2>
+              <p className="text-slate-400 text-xs font-serif font-light mt-1">
+                Choose the specific category for your property listing:
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              {propertySubcategories.map((sub) => (
+                <div
+                  key={sub.title}
+                  onClick={() => handlePropertySubClick(sub.title)}
+                  className="bg-[#f8fafc] rounded-2xl p-4 border border-slate-100/90 shadow-xs flex items-center justify-between gap-4 cursor-pointer hover:bg-blue-50/50 hover:border-blue-200 transition-all group"
+                >
+                  {/* Left Icon Box */}
+                  <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shrink-0 border border-slate-100 shadow-2xs">
+                    <span className="select-none">{sub.icon}</span>
+                  </div>
+
+                  {/* Middle Details */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-serif font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                      {sub.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs font-light mt-0.5">
+                      {sub.desc}
+                    </p>
+                  </div>
+
+                  {/* Right Chevron */}
+                  <ChevronRight className="w-5 h-5 text-blue-600 shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2: AD DETAILS & PHOTOS */}
       {step === 2 && (
-        <Card className="p-6 space-y-5">
-          <div>
-            <h3 className="text-lg font-black text-slate-900">Enter Listing Details</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Provide clear information to attract verified leads</p>
+        <div className="space-y-5">
+          {/* Header */}
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => setStep(1)}
+              className="p-2 -ml-2 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
+              aria-label="Go back"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Ad Details & Photos
+            </h1>
           </div>
 
-          <div className="space-y-4">
+          {/* Selected Category Pill Badge */}
+          <div>
+            <div className="bg-[#f0f6ff] border border-blue-200/80 text-blue-700 text-xs font-serif font-bold px-4 py-2 rounded-2xl inline-flex items-center gap-2 shadow-xs">
+              <span className="text-base">
+                {category.includes('Rent: House')
+                  ? '🏠'
+                  : category.includes('Rent: Shop')
+                  ? '🏬'
+                  : category.includes('Sale: House')
+                  ? '🏡'
+                  : category.includes('Sale: Shop') || category.includes('Shop')
+                  ? '🏢'
+                  : category.includes('PG')
+                  ? '🛏️'
+                  : category.includes('Layout')
+                  ? '🗺️'
+                  : category.includes('Scooter')
+                  ? '🛵'
+                  : category.includes('Services')
+                  ? '🛠️'
+                  : '📦'}
+
+              </span>
+              <span>{category}</span>
+            </div>
+          </div>
+
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Field 1: Ad Title */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Ad Title <span className="text-red-500">*</span>
+              <label className="font-serif font-bold text-slate-900 text-sm mb-1.5 block">
+                Ad Title
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. 30x40 Hoskote Corner Plot or Ather 450X EV"
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all"
+                placeholder="e.g. 2 BHK House / Shop in Indiranagar / PG ..."
+                className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
                 required
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Asking Price <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="e.g. 1000000"
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Location <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all cursor-pointer"
-                >
-                  {LOCATIONS.map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {/* Field 2: Price / Rent (₹) */}
+            <div>
+              <label className="font-serif font-bold text-slate-900 text-sm mb-1.5 block">
+                Price / Rent (₹)
+              </label>
+              <input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 4500000 or 25000"
+                className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
+                required
+              />
             </div>
 
-            {/* Category Specific Form Fields */}
-            {category === CATEGORIES.LAYOUT_SITES && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Plot Dimensions
-                  </label>
-                  <input
-                    type="text"
-                    value={dimensions}
-                    onChange={(e) => setDimensions(e.target.value)}
-                    placeholder="e.g. 30x40 (1200 Sq.Ft)"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Facing Direction
-                  </label>
-                  <select
-                    value={facing}
-                    onChange={(e) => setFacing(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none"
-                  >
-                    <option value="East Facing">East Facing</option>
-                    <option value="West Facing">West Facing</option>
-                    <option value="North Facing">North Facing</option>
-                    <option value="South Facing">South Facing</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {category === CATEGORIES.ELECTRIC_SCOOTERS && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Brand & Model
-                  </label>
-                  <input
-                    type="text"
-                    value={brandModel}
-                    onChange={(e) => setBrandModel(e.target.value)}
-                    placeholder="e.g. Ather 450X Gen 3"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Battery Range (km/charge)
-                  </label>
-                  <input
-                    type="text"
-                    value={batteryRangeKm}
-                    onChange={(e) => setBatteryRangeKm(e.target.value)}
-                    placeholder="e.g. 105 km/charge"
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
+            {/* Field 3: Location / Area Name */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Description <span className="text-red-500">*</span>
+              <label className="font-serif font-bold text-slate-900 text-sm mb-1.5 block">
+                Location / Area Name
+              </label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Indiranagar, Electronic City"
+                className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
+              />
+            </div>
+
+            {/* Field 4: Category Specific Details (Only for Layout, Scooters, Properties) */}
+            {category !== 'Services' && category !== 'Others' && (
+              <div>
+                <label className="font-serif font-bold text-slate-900 text-sm mb-1.5 block">
+                  {category.includes('Layout')
+                    ? 'Plot Dimensions'
+                    : category.includes('Scooter')
+                    ? 'Battery Range (KM)'
+                    : 'Details / BHK / Amenities'}
+                </label>
+                <input
+                  type="text"
+                  value={dimensions}
+                  onChange={(e) => setDimensions(e.target.value)}
+                  placeholder={
+                    category.includes('Layout')
+                      ? 'e.g. 30x40 sq.ft (1200 Sq.Ft)'
+                      : category.includes('Scooter')
+                      ? 'e.g. 140'
+                      : 'e.g. 2 BHK Fully Furnished / Ground Floor Shop'
+                  }
+                  className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
+                />
+              </div>
+            )}
+
+
+
+
+            {/* Field 5: Full Description */}
+            <div>
+              <label className="font-serif font-bold text-slate-900 text-sm mb-1.5 block">
+                Full Description
               </label>
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Provide details about specs, condition, approvals, nearby landmarks..."
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all"
+                placeholder="Describe key features, specs, document status..."
+                className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
                 required
               />
             </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setStep(1)} icon={ArrowLeft}>
-              Back
-            </Button>
-            <Button onClick={() => setStep(3)}>
-              Next Step: Photos <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {/* STEP 3: PHOTOS & SUBMIT */}
-      {step === 3 && (
-        <Card className="p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-black text-slate-900">Upload Listing Photos</h3>
-            <p className="text-xs text-slate-500 mt-0.5">High quality images generate up to 5x more lead inquiries</p>
-          </div>
-
-          {/* Photo Uploader Dropzone */}
-          <div className="p-8 border-2 border-dashed border-blue-200 rounded-2xl bg-blue-50/30 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
-              <Upload className="w-6 h-6" />
-            </div>
+            {/* Field 6: Upload Photos */}
             <div>
-              <p className="text-xs font-bold text-slate-800">Drag & Drop images or browse files</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Supports PNG, JPG, WEBP up to 10MB</p>
-            </div>
-          </div>
+              <label className="font-serif font-bold text-slate-900 text-sm mb-2.5 block">
+                Upload Photos (Select Multiple from Gallery)
+              </label>
 
-          {/* Image Previews */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {images.map((img, idx) => (
-              <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 group">
-                <img src={img} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => setImages(images.filter((_, i) => i !== idx))}
-                  className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+              <div className="flex gap-3 overflow-x-auto scrollbar-none py-1">
+                {/* Open Gallery Box Trigger */}
+                <label className="w-28 h-28 rounded-2xl border-2 border-blue-600 bg-[#f0f6ff] flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:bg-blue-100/50 transition-all shrink-0">
+                  <ImageIcon className="w-6 h-6 text-blue-600" />
+                  <span className="font-serif font-bold text-blue-600 text-xs text-center">
+                    Open Gallery
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Photo Previews */}
+                {images.map((img, idx) => (
+                  <div key={idx} className="w-28 h-28 rounded-2xl overflow-hidden border border-slate-200/80 relative shrink-0 group">
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setImages(images.filter((_, i) => i !== idx))}
+                      className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          {/* Moderation Workflow Status Alert */}
-          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <p className="font-bold text-amber-900">Marketplace Moderation Workflow</p>
-              <p className="text-amber-800 leading-relaxed">
-                Upon submitting, your advertisement status will be set to <strong className="font-black text-amber-900">PENDING_APPROVAL</strong>. Our admin team will review and approve your listing shortly before it goes live to buyers.
-              </p>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setStep(2)} icon={ArrowLeft}>
-              Back
-            </Button>
-            <Button
-              variant="success"
-              size="lg"
-              onClick={handleSubmit}
-              isLoading={postMutation.isPending}
-              className="font-black"
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={postMutation.isPending}
+              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-serif font-bold text-base py-4 px-6 rounded-2xl shadow-lg shadow-blue-500/20 flex items-center justify-center cursor-pointer transition-all mt-6 disabled:opacity-50"
             >
-              Post Advertisement Now
-            </Button>
-          </div>
-        </Card>
+              {postMutation.isPending ? 'Publishing...' : 'Post Ad Now'}
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );

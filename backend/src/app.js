@@ -52,6 +52,7 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/admin/auth', require('./routes/api/v1/admin/auth.routes'));
 app.use('/api/v1/admin/analytics', require('./routes/api/v1/admin/analytics.routes'));
 app.use('/api/v1/admin/ads', require('./routes/api/v1/admin/ads.routes'));
+app.use('/api/v1/admin/categories', require('./routes/api/v1/admin/categories.routes'));
 app.use('/api/v1/admin/banners', require('./routes/api/v1/admin/banners.routes'));
 app.use('/api/v1/admin/subscriptions', require('./routes/api/v1/admin/subscriptions.routes'));
 app.use('/api/v1/admin/users', require('./routes/api/v1/admin/users.routes'));
@@ -61,6 +62,7 @@ app.use('/api/v1/admin/visitor-win', require('./routes/api/v1/admin/visitorWin.r
 app.use('/api/v1/admin/settings', require('./routes/api/v1/admin/settings.routes'));
 
 // User Marketplace REST Routes Mount
+app.use('/api/v1/user/categories', require('./routes/api/v1/admin/categories.routes'));
 app.use('/api/v1/user', require('./routes/api/v1/user/user.routes'));
 
 // Error Middlewares
