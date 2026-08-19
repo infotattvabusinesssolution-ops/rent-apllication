@@ -8,6 +8,7 @@ export const Button = ({
   isLoading = false,
   disabled = false,
   icon: Icon,
+  iconPosition = 'left', // left or right
   className = '',
   type = 'button',
   onClick,
@@ -39,11 +40,14 @@ export const Button = ({
       {...props}
     >
       {isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : Icon ? (
+        <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+      ) : Icon && iconPosition === 'left' ? (
         <Icon className="w-4 h-4 shrink-0" />
       ) : null}
-      <span>{children}</span>
+      <span className="inline-flex items-center justify-center gap-2">{children}</span>
+      {!isLoading && Icon && iconPosition === 'right' ? (
+        <Icon className="w-4 h-4 shrink-0" />
+      ) : null}
     </button>
   );
 };

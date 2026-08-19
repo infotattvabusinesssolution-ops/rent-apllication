@@ -95,11 +95,13 @@ export const Login = () => {
           <Button
             type="submit"
             isLoading={isLoading}
+            icon={ArrowRight}
+            iconPosition="right"
             className="w-full py-3 text-sm font-bold shadow-md shadow-blue-600/20"
           >
-            <span>Sign In to Dashboard</span>
-            <ArrowRight className="w-4 h-4" />
+            Sign In to Dashboard
           </Button>
+
         </form>
 
         <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-slate-400 text-xs font-medium">
