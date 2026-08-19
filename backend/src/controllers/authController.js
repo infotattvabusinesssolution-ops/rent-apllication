@@ -8,6 +8,26 @@ const generateToken = (id) => {
   });
 };
 
+// Helper: Auto seed initial admin in DB if database has no admin records
+const seedDefaultAdmin = async () => {
+  const count = await Admin.countDocuments();
+  if (count === 0) {
+    const email = (process.env.DEFAULT_ADMIN_EMAIL || 'admin@homescooter.com').toLowerCase();
+    const rawPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(rawPassword, salt);
+    await Admin.create({
+      adminId: 'ADM-901',
+      name: 'Rahul Sharma',
+      email,
+      password: hashedPassword,
+      role: 'SUPER_ADMIN',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+    });
+  }
+};
+
+
 // @desc    Admin login
 // @route   POST /api/v1/admin/auth/login
 // @access  Public
@@ -18,22 +38,11 @@ const loginAdmin = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Please provide email and password' });
   }
 
-  // Development fallback for seed admin
-  if (email === 'admin@homescooter.com' && password === 'admin123') {
-    const adminUser = {
-      id: 'ADM-901',
-      name: 'Rahul Sharma',
-      email: 'admin@homescooter.com',
-      role: 'SUPER_ADMIN',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      lastLogin: new Date().toISOString(),
-    };
-    const token = generateToken(adminUser.id);
-    return res.json({ success: true, token, user: adminUser });
-  }
-
   try {
-    const admin = await Admin.findOne({ email }).select('+password');
+    // Ensure default admin exists in MongoDB
+    await seedDefaultAdmin();
+
+    const admin = await Admin.findOne({ email: email.toLowerCase() }).select('+password');
     if (!admin || !admin.isActive) {
       return res.status(401).json({ success: false, message: 'Invalid credentials or inactive account' });
     }
@@ -68,17 +77,37 @@ const loginAdmin = async (req, res) => {
 // @route   GET /api/v1/admin/auth/me
 // @access  Private (Admin)
 const getCurrentAdmin = async (req, res) => {
-  res.json({
-    success: true,
-    user: {
-      id: req.admin.adminId || 'ADM-901',
-      name: req.admin.name || 'Rahul Sharma',
-      email: req.admin.email || 'admin@homescooter.com',
-      role: req.admin.role || 'SUPER_ADMIN',
-      avatar: req.admin.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      lastLogin: req.admin.lastLogin,
-    },
-  });
+  try {
+    const adminId = req.admin?.adminId || req.admin?.id || 'ADM-901';
+    const admin = await Admin.findOne({ adminId });
+
+    if (!admin) {
+      return res.json({
+        success: true,
+        user: {
+          id: 'ADM-901',
+          name: 'Rahul Sharma',
+          email: 'admin@homescooter.com',
+          role: 'SUPER_ADMIN',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        id: admin.adminId,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        avatar: admin.avatar,
+        lastLogin: admin.lastLogin,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // @desc    Admin logout

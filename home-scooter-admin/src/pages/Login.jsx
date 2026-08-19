@@ -5,9 +5,11 @@ import { Building2, Bike, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-rea
 import { Button } from '../components/ui/Button';
 
 export const Login = () => {
-  const [email, setEmail] = useState('admin@homescooter.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+
+
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
