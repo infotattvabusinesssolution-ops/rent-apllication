@@ -19,7 +19,11 @@ const getAds = async (req, res) => {
     const query = {};
 
     if (status && status !== 'ALL') {
-      query.status = status;
+      if (status === 'PENDING' || status === 'PENDING_APPROVAL') {
+        query.status = { $in: ['PENDING', 'PENDING_APPROVAL'] };
+      } else {
+        query.status = status;
+      }
     }
     if (category && category !== 'ALL') {
       query.$or = [
@@ -75,7 +79,7 @@ const getAds = async (req, res) => {
 const getPendingAds = async (req, res) => {
   try {
     const { category, search } = req.query;
-    const query = { status: AD_STATUS.PENDING };
+    const query = { status: { $in: ['PENDING', 'PENDING_APPROVAL'] } };
 
     if (category && category !== 'ALL') {
       query.category = category;
@@ -100,6 +104,7 @@ const getPendingAds = async (req, res) => {
       data: formattedAds,
       total: formattedAds.length,
     });
+
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -136,6 +141,16 @@ const approveAd = async (req, res) => {
     ad.rejectionNotes = null;
     await ad.save();
 
+    const { sendNotification } = require('../utils/createNotification');
+    await sendNotification({
+      recipientType: 'USER',
+      userId: ad.posterId,
+      title: 'Listing Approved! 🎉',
+      desc: `Your listing '${ad.title}' has been approved by admin and is now live on the marketplace.`,
+      type: 'ad',
+      path: '/my-ads',
+    });
+
     return res.json({ success: true, message: 'Advertisement approved successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -159,7 +174,18 @@ const rejectAd = async (req, res) => {
     ad.rejectionNotes = notes || '';
     await ad.save();
 
+    const { sendNotification } = require('../utils/createNotification');
+    await sendNotification({
+      recipientType: 'USER',
+      userId: ad.posterId,
+      title: 'Listing Rejection Notice ⚠️',
+      desc: `Your listing '${ad.title}' was rejected. Reason: ${ad.rejectionReason}`,
+      type: 'ad',
+      path: '/my-ads',
+    });
+
     return res.json({ success: true, message: 'Advertisement rejected successfully' });
+
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

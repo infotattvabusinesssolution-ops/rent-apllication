@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { adsApi } from '../api/adsApi';
+import { categoryApi } from '../api/categoryApi';
 import { CATEGORIES } from '../constants/categories';
+
 import { toast } from 'sonner';
 import {
   ChevronLeft,

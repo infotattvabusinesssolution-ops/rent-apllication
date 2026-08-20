@@ -17,7 +17,9 @@ export const Analytics = () => {
   const { data: analytics, isLoading } = useQuery({
     queryKey: ['analyticsData', dateRange],
     queryFn: () => analyticsApi.getAnalytics(dateRange),
+    refetchInterval: 3000,
   });
+
 
   if (isLoading) {
     return (
@@ -67,11 +69,12 @@ export const Analytics = () => {
             <Eye className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Total Views</span>
           </div>
-          <p className="text-2xl font-black text-slate-900">168,400</p>
+          <p className="text-2xl font-black text-slate-900">{formatNumber(analytics?.totalViews || 14820)}</p>
           <span className="text-[11px] font-bold text-emerald-600 flex items-center mt-1">
             <TrendingUp className="w-3 h-3 mr-0.5" /> +14.2% vs previous period
           </span>
         </Card>
+
 
         <Card>
           <div className="flex items-center gap-2 text-rose-600 mb-1">
@@ -154,11 +157,16 @@ export const Analytics = () => {
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="py-3 px-4 font-bold text-slate-900">{ad.title}</td>
                     <td className="py-3 px-4"><Badge variant="teal">{ad.category}</Badge></td>
-                    <td className="py-3 px-4 font-bold text-slate-800">{ad.views}</td>
-                    <td className="py-3 px-4 font-bold text-blue-600">{ad.inquiries} calls/chats</td>
-                    <td className="py-3 px-4"><Badge variant="success">98 / 100</Badge></td>
+                    <td className="py-3 px-4 font-bold text-slate-800">{ad.views} views</td>
+                    <td className="py-3 px-4 font-bold text-blue-600">{ad.inquiries}</td>
+                    <td className="py-3 px-4">
+                      <Badge variant={ad.performanceScore >= 80 ? 'success' : ad.performanceScore >= 65 ? 'purple' : 'neutral'}>
+                        {ad.performanceScore || 85} / 100
+                      </Badge>
+                    </td>
                   </tr>
                 ))}
+
               </tbody>
             </table>
           </div>

@@ -67,41 +67,12 @@ export const adsApi = {
       const res = await axiosClient.post('/v1/user/ads', adData, config);
       return res;
     } catch (err) {
-      const newAd = {
-        id: `AD${Math.floor(1000 + Math.random() * 9000)}`,
-        title: adData.title || 'New Marketplace Listing',
-        description: adData.description || 'Listing description',
-        price: Number(adData.price) || 50000,
-        priceUnit: adData.priceUnit || '₹',
-        location: adData.location || 'Bangalore',
-        city: 'Bangalore',
-        distanceKm: 2.0,
-        category: adData.category || 'Layout Sites',
-        propertySubType: adData.propertySubType || null,
-        imageUrls: adData.imageUrls || [
-          'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
-        ],
-        posterName: adData.posterName || 'Seller',
-        posterPhone: adData.posterPhone || '+91 98765 43210',
-        posterId: adData.posterId || 'USR-8821',
-        postedAt: new Date().toISOString(),
-        timeAgo: 'Just now',
-        viewsCount: 1,
-        formattedViews: '1 view',
-        status: 'APPROVED',
-        isHighDemand: false,
-        isFeatured: false,
-        isFavorite: false,
-      };
-      localAds.unshift(newAd);
-      return {
-        success: true,
-        ad: newAd,
-        status: 'APPROVED',
-        message: 'Your advertisement has been submitted successfully.',
-      };
+      console.error('API PostAd Error:', err);
+      throw err;
     }
   },
+
+
 
   getMyAds: async (status = 'ALL') => {
     try {

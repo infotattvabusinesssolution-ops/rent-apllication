@@ -1,8 +1,8 @@
 import { CATEGORIES } from '../constants/categories';
 
-export const MOCK_ADMIN_USER = {
-  id: 'ADM-901',
-  name: 'Rahul Sharma',
+export const CURRENT_ADMIN = {
+  id: 'ADM-001',
+  name: 'Home & Scooter',
   email: 'admin@homescooter.com',
   role: 'SUPER_ADMIN',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',

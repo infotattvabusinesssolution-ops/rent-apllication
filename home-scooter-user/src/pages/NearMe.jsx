@@ -19,7 +19,8 @@ export const NearMe = () => {
     queryFn: () => adsApi.getAds({ distanceKm }),
   });
 
-  const ads = result?.data || [];
+  const ads = (result?.data || []).filter((ad) => ad.status === 'APPROVED');
+
 
   return (
     <div className="space-y-4 pb-24 max-w-lg mx-auto px-1 sm:px-0">

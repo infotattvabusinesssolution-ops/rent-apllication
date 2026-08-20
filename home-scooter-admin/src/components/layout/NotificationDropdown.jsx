@@ -1,52 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, FileCheck, CreditCard, AlertTriangle, PhoneCall, CheckCircle2, X } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, FileCheck, CreditCard, AlertTriangle, PhoneCall, CheckCircle2, X, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 'n1',
-    title: 'New Ad Pending Review',
-    desc: '30x40 Hoskote Corner Plot submitted by Hoskote Realties',
-    time: '5m ago',
-    type: 'ad',
-    path: '/ads/pending',
-    unread: true,
-  },
-  {
-    id: 'n2',
-    title: '₹100 Subscription Payment',
-    desc: 'Ananya Rao uploaded payment screenshot (UPI/423981099881)',
-    time: '30m ago',
-    type: 'payment',
-    path: '/subscriptions',
-    unread: true,
-  },
-  {
-    id: 'n3',
-    title: 'Listing Reported',
-    desc: 'User reported Ad #AD1030 for Inaccurate Information',
-    time: '2h ago',
-    type: 'report',
-    path: '/reports',
-    unread: true,
-  },
-  {
-    id: 'n4',
-    title: 'New Callback Lead',
-    desc: 'Ramesh Patel requested callback for Ad #AD1024',
-    time: '4h ago',
-    type: 'lead',
-    path: '/leads',
-    unread: false,
-  },
-];
+import axiosClient from '../../api/axiosClient';
 
 export const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
+  const { data: notifData } = useQuery({
+    queryKey: ['adminNotifications'],
+    queryFn: async () => {
+      const res = await axiosClient.get('/api/v1/admin/notifications');
+      return res.data?.notifications || [];
+    },
+    refetchInterval: 3000,
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: async () => {
+      return await axiosClient.put('/api/v1/admin/notifications/mark-read');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['adminNotifications']);
+    },
+  });
+
+  const notifications = notifData || [];
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   useEffect(() => {
@@ -60,7 +42,7 @@ export const NotificationDropdown = () => {
   }, []);
 
   const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    markReadMutation.mutate();
   };
 
   const icons = {
@@ -68,7 +50,10 @@ export const NotificationDropdown = () => {
     payment: <CreditCard className="w-4 h-4 text-emerald-600 bg-emerald-50 p-1 rounded-md" />,
     report: <AlertTriangle className="w-4 h-4 text-red-600 bg-red-50 p-1 rounded-md" />,
     lead: <PhoneCall className="w-4 h-4 text-blue-600 bg-blue-50 p-1 rounded-md" />,
+    status: <ShieldAlert className="w-4 h-4 text-purple-600 bg-purple-50 p-1 rounded-md" />,
+    system: <Bell className="w-4 h-4 text-slate-600 bg-slate-100 p-1 rounded-md" />,
   };
+
 
   return (
     <div className="relative" ref={dropdownRef}>

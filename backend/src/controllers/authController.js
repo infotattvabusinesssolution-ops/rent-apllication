@@ -18,15 +18,17 @@ const seedDefaultAdmin = async () => {
     const hashedPassword = await bcrypt.hash(rawPassword, salt);
     await Admin.create({
       adminId: 'ADM-901',
-      name: 'Rahul Sharma',
+      name: 'Home & Scooter',
       email,
       password: hashedPassword,
       role: 'SUPER_ADMIN',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
     });
+  } else {
+    // Update existing default admin name to Home & Scooter
+    await Admin.updateMany({ $or: [{ name: 'Rahul Sharma' }, { name: { $exists: true } }] }, { $set: { name: 'Home & Scooter' } });
   }
 };
-
 
 // @desc    Admin login
 // @route   POST /api/v1/admin/auth/login
@@ -52,6 +54,7 @@ const loginAdmin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    admin.name = 'Home & Scooter';
     admin.lastLogin = new Date();
     await admin.save();
 
@@ -61,7 +64,7 @@ const loginAdmin = async (req, res) => {
       token,
       user: {
         id: admin.adminId,
-        name: admin.name,
+        name: 'Home & Scooter',
         email: admin.email,
         role: admin.role,
         avatar: admin.avatar,
@@ -86,7 +89,7 @@ const getCurrentAdmin = async (req, res) => {
         success: true,
         user: {
           id: 'ADM-901',
-          name: 'Rahul Sharma',
+          name: 'Home & Scooter',
           email: 'admin@homescooter.com',
           role: 'SUPER_ADMIN',
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
@@ -98,13 +101,14 @@ const getCurrentAdmin = async (req, res) => {
       success: true,
       user: {
         id: admin.adminId,
-        name: admin.name,
+        name: 'Home & Scooter',
         email: admin.email,
         role: admin.role,
         avatar: admin.avatar,
         lastLogin: admin.lastLogin,
       },
     });
+
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

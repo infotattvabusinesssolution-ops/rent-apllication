@@ -64,4 +64,19 @@ export const authApi = {
       authStorage.clear();
     }
   },
+
+  updateProfile: async (profileData) => {
+    try {
+      const config = profileData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+      const res = await axiosClient.put('/v1/user/auth/profile', profileData, config);
+      if (res?.user) {
+        authStorage.setUser(res.user);
+      }
+      return res;
+    } catch (err) {
+      console.error('API Update Profile error:', err);
+      throw err;
+    }
+  },
 };
+

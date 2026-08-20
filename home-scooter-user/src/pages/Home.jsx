@@ -43,12 +43,16 @@ export const Home = () => {
   });
 
   const allAds = adsResult?.data || [];
-  const featuredAds = allAds.filter((ad) => ad.isFeatured || ad.status === 'APPROVED').slice(0, 5);
+  const approvedAds = allAds.filter((ad) => ad.status === 'APPROVED');
+  const featuredAds = approvedAds.filter((ad) => ad.isFeatured).length > 0
+    ? approvedAds.filter((ad) => ad.isFeatured)
+    : approvedAds.slice(0, 5);
   
-  // Filtered explore listings
+  // Filtered explore listings - STRICTLY APPROVED ADS ONLY
   const exploreListings = activeCategory === 'ALL'
-    ? allAds
-    : allAds.filter((ad) => ad.category === activeCategory);
+    ? approvedAds
+    : approvedAds.filter((ad) => ad.category === activeCategory);
+
 
 
   const toggleFavorite = (e, adId) => {

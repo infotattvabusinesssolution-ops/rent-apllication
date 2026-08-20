@@ -68,6 +68,10 @@ app.use('/api/v1/user/chats', require('./routes/api/v1/user/chat.routes'));
 app.use('/api/v1/user/favorites', require('./routes/api/v1/user/favorite.routes'));
 app.use('/api/v1/user', require('./routes/api/v1/user/user.routes'));
 
+// Real-Time Notification Routes Mount
+app.use('/api/v1', require('./routes/api/v1/notification.routes'));
+
+
 // Error Middlewares
 app.use(notFound);
 app.use(errorHandler);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { adsApi } from '../api/adsApi';
+import { dashboardApi } from '../api/dashboardApi';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -39,6 +40,12 @@ export const AdsList = () => {
   const [rejectingAd, setRejectingAd] = useState(null);
   const [deletingAdId, setDeletingAdId] = useState(null);
 
+  const { data: stats } = useQuery({
+    queryKey: ['adminDashboardStats'],
+    queryFn: () => dashboardApi.getStats(),
+    refetchInterval: 3000,
+  });
+
   const { data: adsResult, isLoading } = useQuery({
     queryKey: ['ads', currentTab, categoryFilter, searchQuery],
     queryFn: () =>
@@ -49,6 +56,7 @@ export const AdsList = () => {
         category: categoryFilter,
         search: searchQuery,
       }),
+    refetchInterval: 3000,
   });
 
   const approveMutation = useMutation({
@@ -57,6 +65,7 @@ export const AdsList = () => {
       toast.success('Advertisement approved successfully');
       queryClient.invalidateQueries(['ads']);
       queryClient.invalidateQueries(['dashboardStats']);
+      queryClient.invalidateQueries(['adminDashboardStats']);
     },
   });
 
@@ -67,6 +76,7 @@ export const AdsList = () => {
       setRejectingAd(null);
       queryClient.invalidateQueries(['ads']);
       queryClient.invalidateQueries(['dashboardStats']);
+      queryClient.invalidateQueries(['adminDashboardStats']);
     },
   });
 
@@ -75,6 +85,7 @@ export const AdsList = () => {
     onSuccess: () => {
       toast.success('Badges updated');
       queryClient.invalidateQueries(['ads']);
+      queryClient.invalidateQueries(['adminDashboardStats']);
     },
   });
 
@@ -84,18 +95,20 @@ export const AdsList = () => {
       toast.success('Advertisement deleted');
       setDeletingAdId(null);
       queryClient.invalidateQueries(['ads']);
+      queryClient.invalidateQueries(['adminDashboardStats']);
     },
   });
 
   const tabs = [
-    { id: 'ALL', label: 'All Listings' },
-    { id: 'PENDING', label: 'Pending', badge: '124' },
-    { id: 'APPROVED', label: 'Approved' },
-    { id: 'REJECTED', label: 'Rejected' },
-    { id: 'UNPUBLISHED', label: 'Unpublished' },
-    { id: 'FEATURED', label: 'Featured' },
-    { id: 'HIGH_DEMAND', label: 'High Demand' },
+    { id: 'ALL', label: 'All Listings', badge: stats?.totalAdsCount ?? 0, badgeColor: 'bg-blue-600' },
+    { id: 'PENDING', label: 'Pending', badge: stats?.pendingApprovals ?? 0, badgeColor: 'bg-amber-500' },
+    { id: 'APPROVED', label: 'Approved', badge: stats?.totalPublishedAds ?? 0, badgeColor: 'bg-emerald-600' },
+    { id: 'REJECTED', label: 'Rejected', badge: stats?.rejectedAds ?? 0, badgeColor: 'bg-red-500' },
+    { id: 'UNPUBLISHED', label: 'Unpublished', badge: stats?.unpublishedAds ?? 0, badgeColor: 'bg-slate-500' },
+    { id: 'FEATURED', label: 'Featured', badge: stats?.featuredAds ?? 0, badgeColor: 'bg-purple-600' },
+    { id: 'HIGH_DEMAND', label: 'High Demand', badge: stats?.highDemandAds ?? 0, badgeColor: 'bg-amber-600' },
   ];
+
 
   const adsList = adsResult?.data || [];
 
@@ -127,14 +140,16 @@ export const AdsList = () => {
             }`}
           >
             <span>{tab.label}</span>
-            {tab.badge && (
-              <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+            {tab.badge !== undefined && tab.badge !== null && (
+              <span className={`${tab.badgeColor || 'bg-blue-600'} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1`}>
                 {tab.badge}
               </span>
             )}
+
           </button>
         ))}
       </div>
+
 
       {/* Filter Bar & Search */}
       <div className="flex flex-col md:flex-row items-center gap-3 justify-between">

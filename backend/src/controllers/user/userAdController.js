@@ -33,8 +33,8 @@ const getAds = async (req, res) => {
     const { category, search, page = 1, limit = 20 } = req.query;
     const query = {
       status: 'APPROVED',
-      adId: { $nin: ['AD1024', 'AD1025', 'AD1026', 'AD1027', 'AD1028', 'AD1029'] },
     };
+
 
     if (category && category !== 'ALL') {
       query.$or = [
@@ -79,12 +79,18 @@ const getAds = async (req, res) => {
   }
 };
 
+
 // @desc    Get single advertisement details by ID
 // @route   GET /api/v1/user/ads/:id
 const getAdById = async (req, res) => {
   try {
-    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
+    const ad = await Advertisement.findOneAndUpdate(
+      buildAdQuery(req.params.id),
+      { $inc: { viewsCount: 1 } },
+      { new: true }
+    );
     if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+
     const formatted = await attachRealPosterProfile(ad);
 
     const Favorite = require('../../models/Favorite');
@@ -124,14 +130,16 @@ const postAd = async (req, res) => {
     // 2. Process base64 data URLs or links sent in req.body.imageUrls
     if (imageUrls) {
       const urlsArray = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
-      for (const img of urlsArray) {
+      const uploadPromises = urlsArray.map(async (img) => {
         if (typeof img === 'string' && img.startsWith('data:image')) {
-          const cloudinaryUrl = await uploadToCloudinary(img, 'homescooter_ads');
-          finalImageUrls.push(cloudinaryUrl);
+          return await uploadToCloudinary(img, 'homescooter_ads');
         } else if (typeof img === 'string' && img.length > 0) {
-          finalImageUrls.push(img);
+          return img;
         }
-      }
+        return null;
+      });
+      const resolvedUrls = await Promise.all(uploadPromises);
+      finalImageUrls = [...finalImageUrls, ...resolvedUrls.filter(Boolean)];
     }
 
     if (finalImageUrls.length === 0) {
@@ -146,9 +154,9 @@ const postAd = async (req, res) => {
       mainCategory = 'Properties';
     }
 
-    const realPosterName = posterName || req.user?.name || '';
-    const realPosterPhone = posterPhone || req.user?.phone || '';
-    const realPosterId = posterId || req.user?.userId || req.user?.id || '';
+    const realPosterName = (posterName || req.user?.name || 'Seller').trim() || 'Seller';
+    const realPosterPhone = (posterPhone || req.user?.phone || '+91 98765 43210').trim() || '+91 98765 43210';
+    const realPosterId = (posterId || req.user?.userId || req.user?.id || 'USR-8821').trim() || 'USR-8821';
 
     const newAd = await Advertisement.create({
       adId,
@@ -165,28 +173,35 @@ const postAd = async (req, res) => {
       posterName: realPosterName,
       posterPhone: realPosterPhone,
       posterId: realPosterId,
-      status: 'APPROVED',
+      status: 'PENDING_APPROVAL',
+    });
+
+    const { sendNotification } = require('../../utils/createNotification');
+    await sendNotification({
+      recipientType: 'ADMIN',
+      title: 'New Ad Pending Review 📦',
+      desc: `New listing '${newAd.title}' submitted by ${realPosterName}`,
+      type: 'ad',
+      path: '/ads/pending',
     });
 
     return res.status(201).json({
       success: true,
-      message: 'Advertisement submitted and published successfully with Cloudinary image upload!',
+      message: 'Your advertisement has been submitted successfully and is pending admin approval!',
       ad: { ...newAd.toObject(), id: newAd.adId },
     });
+
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // @desc    Get current user posted ads
 // @route   GET /api/v1/user/my-ads
 const getMyAds = async (req, res) => {
   try {
     const { status } = req.query;
-    const query = {
-      $or: [{ posterId: 'USR-8821' }, { posterName: 'Gyana Prakash' }],
-    };
+    const query = {};
 
     if (status && status !== 'ALL') {
       if (status === 'PENDING_APPROVAL' || status === 'PENDING') {
@@ -204,6 +219,8 @@ const getMyAds = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
 
 // @desc    Update user posted ad
 // @route   PUT /api/v1/user/my-ads/:id

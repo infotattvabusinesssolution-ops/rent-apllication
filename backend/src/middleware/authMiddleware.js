@@ -12,11 +12,12 @@ const protectAdmin = async (req, res, next) => {
       if (token.startsWith('mock_jwt_token_admin')) {
         req.admin = {
           adminId: 'ADM-901',
-          name: 'Rahul Sharma',
+          name: 'Home & Scooter',
           email: 'admin@homescooter.com',
           role: 'SUPER_ADMIN',
           isActive: true,
         };
+
         return next();
       }
 

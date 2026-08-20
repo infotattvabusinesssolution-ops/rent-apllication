@@ -35,7 +35,9 @@ export const PendingAds = () => {
   const { data: pendingResult, isLoading } = useQuery({
     queryKey: ['pendingAds', category, search],
     queryFn: () => adsApi.getPendingAds({ category, search }),
+    refetchInterval: 3000,
   });
+
 
   const approveMutation = useMutation({
     mutationFn: adsApi.approveAd,
@@ -58,7 +60,12 @@ export const PendingAds = () => {
     },
   });
 
-  const pendingList = pendingResult?.data || [];
+  const pendingList = Array.isArray(pendingResult?.data)
+    ? pendingResult.data
+    : Array.isArray(pendingResult)
+    ? pendingResult
+    : [];
+
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {

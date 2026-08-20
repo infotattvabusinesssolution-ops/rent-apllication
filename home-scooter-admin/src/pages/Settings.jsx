@@ -11,7 +11,8 @@ export const Settings = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dealer');
 
-  const [adminName, setAdminName] = useState(user?.name || 'Rahul Sharma');
+  const [adminName, setAdminName] = useState(user?.name || 'Home & Scooter');
+
   const [adminEmail, setAdminEmail] = useState(user?.email || 'admin@homescooter.com');
   const [dealerName, setDealerName] = useState('Hoskote Realties');
   const [dealerPhone, setDealerPhone] = useState('+91 98765 43210');

@@ -53,7 +53,8 @@ export const UserDetail = () => {
   const mockTimeline = [
     { date: '18 Aug 2026 09:30 AM', text: 'Posted new advertisement #AD1024 (30x40 Hoskote Corner Plot)', type: 'ad' },
     { date: '18 Aug 2026 10:15 AM', text: 'Submitted ₹100 UPI payment screenshot for 10-day subscription', type: 'payment' },
-    { date: '17 Aug 2026 02:45 PM', text: 'Subscription activated by Admin Rahul Sharma (MEMBER_8901)', type: 'system' },
+    { date: '17 Aug 2026 02:45 PM', text: 'Subscription activated by Admin Home & Scooter (MEMBER_8901)', type: 'system' },
+
     { date: '15 Jan 2026 11:00 AM', text: 'Registered account on Home & Scooter Marketplace App', type: 'user' },
   ];
 

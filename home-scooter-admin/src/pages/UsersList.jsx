@@ -25,24 +25,41 @@ export const UsersList = () => {
   const { data: result, isLoading } = useQuery({
     queryKey: ['users', filterTab, search],
     queryFn: () => usersApi.getUsers({ filter: filterTab, search }),
+    refetchInterval: 3000,
   });
+
 
   const banMutation = useMutation({
     mutationFn: ({ id, reason }) => usersApi.banUser(id, reason),
-    onSuccess: () => {
-      toast.success('User account banned');
+    onSuccess: (res) => {
+      toast.success(res?.message || 'User account banned & listings unpublished');
       setBanningUser(null);
       queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(['userDetail']);
+      queryClient.invalidateQueries(['ads']);
+      queryClient.invalidateQueries(['pendingAds']);
+      queryClient.invalidateQueries(['dashboardStats']);
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to ban user account');
     },
   });
 
   const unbanMutation = useMutation({
-    mutationFn: usersApi.unbanUser,
-    onSuccess: () => {
-      toast.success('User unbanned');
+    mutationFn: (id) => usersApi.unbanUser(id),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'User account restored to Active');
       queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(['userDetail']);
+      queryClient.invalidateQueries(['ads']);
+      queryClient.invalidateQueries(['pendingAds']);
+      queryClient.invalidateQueries(['dashboardStats']);
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to unban user account');
     },
   });
+
 
   const verifyMutation = useMutation({
     mutationFn: usersApi.verifyUser,

@@ -28,7 +28,8 @@ export const SearchResults = () => {
     queryFn: () => adsApi.getAds({ ...filters, search: query, category: categoryParam }),
   });
 
-  const listings = result?.data || [];
+  const listings = (result?.data || []).filter((ad) => ad.status === 'APPROVED');
+
 
   return (
     <div className="space-y-6">

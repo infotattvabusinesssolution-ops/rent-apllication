@@ -35,7 +35,8 @@ const seedData = async () => {
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
     await Admin.create({
       adminId: 'ADM-901',
-      name: 'Rahul Sharma',
+      name: 'Home & Scooter',
+
       email,
       password: hashedPassword,
       role: 'SUPER_ADMIN',

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
+import { dashboardApi } from '../../api/dashboardApi';
+
 import {
   LayoutDashboard,
   Layers,
@@ -23,29 +26,48 @@ import {
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/ads', label: 'All Ads', icon: Layers },
-  { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badge: '124', badgeColor: 'bg-amber-500' },
+  { path: '/ads', label: 'All Ads', icon: Layers, badgeColor: 'bg-blue-600' },
+  { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badgeColor: 'bg-amber-500' },
   { path: '/categories', label: 'Categories', icon: FolderTree },
   { path: '/banners', label: 'Banner Ads', icon: Image },
-  { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard, badge: '2', badgeColor: 'bg-emerald-500' },
+  { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard, badgeColor: 'bg-emerald-500' },
   { path: '/users', label: 'Users', icon: Users },
   { path: '/leads', label: 'Callback Leads', icon: PhoneCall },
-  { path: '/reports', label: 'Reported Ads', icon: ShieldAlert, badge: '24', badgeColor: 'bg-red-500' },
+  { path: '/reports', label: 'Reported Ads', icon: ShieldAlert, badgeColor: 'bg-red-500' },
   { path: '/visitor-win', label: 'Visitor Win', icon: Award },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
-
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const { data: stats } = useQuery({
+    queryKey: ['adminDashboardStats'],
+    queryFn: () => dashboardApi.getStats(),
+    refetchInterval: 3000,
+  });
+
+  const totalAdsCount = stats?.totalAdsCount !== undefined ? stats.totalAdsCount : stats?.totalPublishedAds || 0;
+  const pendingCount = stats?.pendingApprovals !== undefined ? stats.pendingApprovals : 0;
+  const subscribersCount = stats?.activeSubscribers !== undefined ? stats.activeSubscribers : 0;
+  const reportsCount = stats?.pendingReports !== undefined ? stats.pendingReports : 0;
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  const getBadgeValue = (path) => {
+    if (path === '/ads') return totalAdsCount;
+    if (path === '/ads/pending') return pendingCount;
+    if (path === '/subscriptions') return subscribersCount;
+    if (path === '/reports') return reportsCount;
+    return null;
+  };
+
 
   return (
     <aside
@@ -83,6 +105,7 @@ export const Sidebar = () => {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
+          const badgeVal = getBadgeValue(item.path);
           return (
             <NavLink
               key={item.path}
@@ -98,17 +121,19 @@ export const Sidebar = () => {
             >
               <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
               {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
-              {!collapsed && item.badge && (
+              {!collapsed && badgeVal !== undefined && badgeVal !== null && (
                 <span
-                  className={`text-[10px] font-bold text-white px-2 py-0.5 rounded-full ${item.badgeColor}`}
+                  className={`text-[10px] font-bold text-white px-2 py-0.5 rounded-full ${item.badgeColor || 'bg-amber-500'}`}
                 >
-                  {item.badge}
+                  {badgeVal}
                 </span>
               )}
+
             </NavLink>
           );
         })}
       </nav>
+
 
       {/* Admin Profile Footer */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/50">
@@ -120,10 +145,11 @@ export const Sidebar = () => {
           />
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'Rahul Sharma'}</p>
+              <p className="text-xs font-bold text-slate-800 truncate">{user?.name || 'Home & Scooter'}</p>
               <p className="text-[10px] text-slate-500 truncate">{user?.role || 'SUPER_ADMIN'}</p>
             </div>
           )}
+
           <button
             onClick={handleLogout}
             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

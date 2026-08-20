@@ -14,7 +14,6 @@ const advertisementSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: Object.values(CATEGORIES),
       index: true,
     },
     propertySubType: { type: String, default: null },
@@ -32,10 +31,10 @@ const advertisementSchema = new mongoose.Schema(
     // Moderation Status & Flags
     status: {
       type: String,
-      enum: Object.values(AD_STATUS),
-      default: AD_STATUS.PENDING,
+      default: 'PENDING_APPROVAL',
       index: true,
     },
+
     rejectionReason: { type: String, default: null },
     rejectionNotes: { type: String, default: null },
 

@@ -7,10 +7,28 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('admin_user');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.name === 'Rahul Sharma') parsed.name = 'Home & Scooter';
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('admin_token'));
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && user.name === 'Rahul Sharma') {
+      const updated = { ...user, name: 'Home & Scooter' };
+      setUser(updated);
+      localStorage.setItem('admin_user', JSON.stringify(updated));
+    }
+  }, [user]);
+
 
   const login = async (credentials) => {
     setIsLoading(true);

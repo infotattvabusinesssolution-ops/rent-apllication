@@ -93,9 +93,10 @@ export const Header = ({ onMobileMenuOpen }) => {
               />
               <div className="hidden sm:flex flex-col">
                 <span className="text-xs font-bold text-slate-800 leading-tight flex items-center gap-1">
-                  {user?.name || 'Rahul Sharma'}
+                  {user?.name || 'Home & Scooter'}
                   <ChevronDown className="w-3 h-3 text-slate-400" />
                 </span>
+
                 <span className="text-[10px] font-semibold text-emerald-600">
                   {user?.role || 'SUPER_ADMIN'}
                 </span>

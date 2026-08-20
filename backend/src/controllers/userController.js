@@ -1,4 +1,15 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
+
+const findUserByIdentifier = async (id) => {
+  if (!id) return null;
+  const cleanId = String(id).trim();
+  const query = [{ userId: cleanId }, { email: cleanId }, { phone: cleanId }];
+  if (mongoose.Types.ObjectId.isValid(cleanId)) {
+    query.push({ _id: cleanId });
+  }
+  return await User.findOne({ $or: query });
+};
 
 // @desc    Get all users
 // @route   GET /api/v1/admin/users
@@ -27,13 +38,34 @@ const getUsers = async (req, res) => {
     }
 
     const users = await User.find(query).sort({ createdAt: -1 });
-    const formatted = users.map((u) => {
-      const obj = u.toObject();
-      return { ...obj, id: obj.userId };
-    });
+    const Advertisement = require('../models/Advertisement');
+
+    const formatted = await Promise.all(
+      users.map(async (u) => {
+        const obj = u.toObject();
+
+        const posterOrArray = [];
+        if (obj.userId) posterOrArray.push({ posterId: String(obj.userId) });
+        if (obj.phone) posterOrArray.push({ posterPhone: String(obj.phone) });
+        if (obj.email) posterOrArray.push({ posterEmail: String(obj.email) });
+        if (obj._id) posterOrArray.push({ posterId: String(obj._id) });
+
+        const adsCount = posterOrArray.length > 0
+          ? await Advertisement.countDocuments({ $or: posterOrArray })
+          : 0;
+
+        return {
+          ...obj,
+          id: obj.userId || String(obj._id),
+          avatar: obj.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+          postedAdsCount: adsCount || obj.postedAdsCount || 0,
+        };
+      })
+    );
 
     return res.json({ success: true, data: formatted, total: formatted.length });
   } catch (error) {
+    console.error('SERVER ERROR IN GETUSERS:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -43,25 +75,48 @@ const getUsers = async (req, res) => {
 // @access  Private (Admin)
 const getUserById = async (req, res) => {
   try {
-    const user = await User.findOne({ $or: [{ userId: req.params.id }, { _id: req.params.id }] });
+    const user = await findUserByIdentifier(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     const obj = user.toObject();
-    return res.json({ success: true, ...obj, id: obj.userId });
+    const Advertisement = require('../models/Advertisement');
+
+    const posterOrArray = [];
+    if (obj.userId) posterOrArray.push({ posterId: String(obj.userId) });
+    if (obj.phone) posterOrArray.push({ posterPhone: String(obj.phone) });
+    if (obj.email) posterOrArray.push({ posterEmail: String(obj.email) });
+    if (obj._id) posterOrArray.push({ posterId: String(obj._id) });
+
+    const userQuery = posterOrArray.length > 0 ? { $or: posterOrArray } : { posterId: 'NONE' };
+
+    const postedAdsCount = await Advertisement.countDocuments(userQuery);
+    const approvedAdsCount = await Advertisement.countDocuments({ ...userQuery, status: 'APPROVED' });
+    const rejectedAdsCount = await Advertisement.countDocuments({ ...userQuery, status: 'REJECTED' });
+
+    return res.json({
+      success: true,
+      ...obj,
+      id: obj.userId || String(obj._id),
+      avatar: obj.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      postedAdsCount: postedAdsCount || obj.postedAdsCount || 0,
+      approvedAdsCount,
+      rejectedAdsCount,
+    });
   } catch (error) {
+    console.error('SERVER ERROR IN GETUSERBYID:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Ban user
+// @desc    Ban user & unpublish their active advertisements
 // @route   POST /api/v1/admin/users/:id/ban
 // @access  Private (Admin)
 const banUser = async (req, res) => {
   try {
-    const { reason = '' } = req.body;
-    const user = await User.findOne({ $or: [{ userId: req.params.id }, { _id: req.params.id }] });
+    const { reason = 'Manual admin safety ban' } = req.body;
+    const user = await findUserByIdentifier(req.params.id);
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -72,18 +127,44 @@ const banUser = async (req, res) => {
     user.bannedAt = new Date();
     await user.save();
 
-    return res.json({ success: true, message: 'User banned successfully' });
+    // Dynamically unpublish all advertisements posted by this banned user in MongoDB
+    const Advertisement = require('../models/Advertisement');
+    const userQuery = {
+      $or: [
+        { posterId: user.userId },
+        { posterPhone: user.phone },
+        { posterEmail: user.email },
+        { posterId: String(user._id) },
+      ],
+    };
+    await Advertisement.updateMany(userQuery, { $set: { status: 'UNPUBLISHED', rejectionReason: 'User Account Banned' } });
+
+    const { sendNotification } = require('../utils/createNotification');
+    await sendNotification({
+      recipientType: 'USER',
+      userId: user.userId,
+      title: 'Account Suspended 🚫',
+      desc: `Your account has been suspended by Admin. Reason: ${reason}`,
+      type: 'status',
+      path: '/profile',
+    });
+
+    return res.json({
+      success: true,
+      message: `User ${user.name} banned successfully and all their active listings have been unpublished.`,
+      user: { ...user.toObject(), id: user.userId },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Unban user
+// @desc    Unban user & restore their advertisements
 // @route   POST /api/v1/admin/users/:id/unban
 // @access  Private (Admin)
 const unbanUser = async (req, res) => {
   try {
-    const user = await User.findOne({ $or: [{ userId: req.params.id }, { _id: req.params.id }] });
+    const user = await findUserByIdentifier(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -93,18 +174,47 @@ const unbanUser = async (req, res) => {
     user.bannedAt = null;
     await user.save();
 
-    return res.json({ success: true, message: 'User account restored to Active' });
+    // Restore user advertisements back to APPROVED in MongoDB
+    const Advertisement = require('../models/Advertisement');
+    const userQuery = {
+      $or: [
+        { posterId: user.userId },
+        { posterPhone: user.phone },
+        { posterEmail: user.email },
+        { posterId: String(user._id) },
+      ],
+      status: 'UNPUBLISHED',
+    };
+    await Advertisement.updateMany(userQuery, { $set: { status: 'APPROVED', rejectionReason: null } });
+
+    const { sendNotification } = require('../utils/createNotification');
+    await sendNotification({
+      recipientType: 'USER',
+      userId: user.userId,
+      title: 'Account Restored ✅',
+      desc: `Your account has been unbanned and restored to Active status.`,
+      type: 'status',
+      path: '/profile',
+    });
+
+    return res.json({
+      success: true,
+      message: `User ${user.name} unbanned successfully and their listings have been restored to Active.`,
+      user: { ...user.toObject(), id: user.userId },
+    });
+
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // @desc    Verify user account
 // @route   POST /api/v1/admin/users/:id/verify
 // @access  Private (Admin)
 const verifyUser = async (req, res) => {
   try {
-    const user = await User.findOne({ $or: [{ userId: req.params.id }, { _id: req.params.id }] });
+    const user = await findUserByIdentifier(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -123,7 +233,7 @@ const verifyUser = async (req, res) => {
 // @access  Private (Admin)
 const toggleSubscriber = async (req, res) => {
   try {
-    const user = await User.findOne({ $or: [{ userId: req.params.id }, { _id: req.params.id }] });
+    const user = await findUserByIdentifier(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -149,3 +259,4 @@ module.exports = {
   verifyUser,
   toggleSubscriber,
 };
+

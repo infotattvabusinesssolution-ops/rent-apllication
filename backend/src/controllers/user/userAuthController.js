@@ -359,13 +359,79 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// @desc    Update user profile & avatar photo
+// @route   PUT /api/v1/user/auth/profile
+// @access  Public / Private
+const updateUserProfile = async (req, res) => {
+  try {
+    const { uploadToCloudinary } = require('../../utils/cloudinary');
+    const { userId, name, phone, email, avatar, location } = req.body;
+
+    const rawUserId = userId || req.user?.userId || req.user?.id || 'USR-3894';
+
+    let user = await User.findOne({
+      $or: [{ userId: String(rawUserId) }, { email: String(email || '') }, { phone: String(phone || '') }],
+    });
+
+    if (!user) {
+      user = await User.findOne({});
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User profile not found' });
+    }
+
+    let finalAvatar = user.avatar;
+
+    // Process avatar photo file if uploaded via Multer or base64
+    if (req.file) {
+      finalAvatar = await uploadToCloudinary(req.file, 'homescooter_avatars');
+    } else if (avatar) {
+      if (typeof avatar === 'string' && avatar.startsWith('data:image')) {
+        finalAvatar = await uploadToCloudinary(avatar, 'homescooter_avatars');
+      } else if (typeof avatar === 'string' && avatar.length > 0) {
+        finalAvatar = avatar;
+      }
+    }
+
+    if (name) user.name = String(name).trim();
+    if (phone) user.phone = String(phone).trim();
+    if (email) user.email = String(email).trim().toLowerCase();
+    if (location) user.location = String(location).trim();
+    if (finalAvatar) user.avatar = finalAvatar;
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully!',
+      user: {
+        id: user.userId,
+        userId: user.userId,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        location: user.location,
+        isVerified: user.isVerified,
+        isSubscribed: user.isSubscribed,
+        joinedDate: user.joinedDate,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
   updateUserLocation,
+  updateUserProfile,
   logoutUser,
   forgotPassword,
   resetPassword,
 };
+
 

@@ -37,20 +37,22 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
       return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
     }
 
-    // Save locally as backup copy in uploads/ directory
+    // Save locally as primary/backup copy in uploads/ directory
+    let localUrl = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
     try {
       const uploadDir = path.join(__dirname, '../../uploads');
       if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
       fs.writeFileSync(path.join(uploadDir, filename), fileBuffer);
+      const port = process.env.PORT || 5027;
+      localUrl = `http://localhost:${port}/uploads/${filename}`;
     } catch (e) {
-      // Ignore local write failure
+      console.error('Error saving image locally:', e.message);
     }
 
-    // Generate signature for signed uploads
+    // Try Cloudinary upload, resolve with localUrl if slow or unconfigured
     const timestamp = Math.floor(Date.now() / 1000);
     const signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
     const signature = crypto.createHash('sha1').update(signatureStr).digest('hex');
-
     const boundary = '----CloudinaryFormBoundary' + Math.random().toString(16).substring(2);
 
     let postData = '';
@@ -74,6 +76,11 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
     ]);
 
     return new Promise((resolve) => {
+      // Set a short 3-second timeout for Cloudinary, otherwise fallback to localUrl immediately
+      const timer = setTimeout(() => {
+        resolve(localUrl);
+      }, 3000);
+
       const reqOptions = {
         hostname: 'api.cloudinary.com',
         path: `/v1_1/${cloudName}/image/upload`,
@@ -88,30 +95,29 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
         let body = '';
         res.on('data', (chunk) => (body += chunk));
         res.on('end', () => {
+          clearTimeout(timer);
           try {
             const parsed = JSON.parse(body);
             if (parsed && parsed.secure_url) {
-              console.log('✅ Cloudinary Upload Success:', parsed.secure_url);
               resolve(parsed.secure_url);
             } else {
-              console.log('⚠️ Cloudinary Response Notice:', parsed.error?.message || body);
-              const localUrl = `http://localhost:${process.env.PORT || 5027}/uploads/${filename}`;
               resolve(localUrl);
             }
           } catch (e) {
-            resolve(`http://localhost:${process.env.PORT || 5027}/uploads/${filename}`);
+            resolve(localUrl);
           }
         });
       });
 
-      req.on('error', (err) => {
-        console.error('⚠️ Cloudinary Network Error:', err.message);
-        resolve(`http://localhost:${process.env.PORT || 5027}/uploads/${filename}`);
+      req.on('error', () => {
+        clearTimeout(timer);
+        resolve(localUrl);
       });
 
       req.write(payloadBuffer);
       req.end();
     });
+
   } catch (err) {
     return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
   }
