@@ -1,52 +1,83 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { categoryApi } from '../api/categoryApi';
 import { PlusCircle, ChevronRight } from 'lucide-react';
 
 export const Sell = () => {
   const navigate = useNavigate();
 
-  const categories = [
-    {
-      title: 'Sell Layout Site / Land',
-      desc: 'Post plots, agricultural land & sites',
-      icon: '🗺️',
-      bg: 'bg-[#fffbeb]',
-      arrowColor: 'text-amber-700',
-      categoryParam: 'Layout Sites',
-    },
-    {
-      title: 'Sell / Rent Properties',
-      desc: 'Houses, flats, shops, offices, PGs & commercial properties',
-      icon: '🏢',
-      bg: 'bg-[#f0f6ff]',
-      arrowColor: 'text-blue-600',
-      categoryParam: 'Properties',
-    },
-    {
-      title: 'Rent / Sell EV Scooter',
-      desc: 'Electric scooters, bikes & rental fleets',
-      icon: '🛵',
-      bg: 'bg-[#fefce8]',
-      arrowColor: 'text-amber-700',
-      categoryParam: 'Electric Scooters',
-    },
-    {
-      title: 'Offer Professional Service',
-      desc: 'Interiors, architecture & maintenance',
-      icon: '🛠️',
-      bg: 'bg-[#faf5ff]',
-      arrowColor: 'text-purple-600',
-      categoryParam: 'Services',
-    },
-    {
-      title: 'Other Products & Services',
-      desc: 'General products & promotional ads',
-      icon: '📦',
-      bg: 'bg-[#f0fdf4]',
-      arrowColor: 'text-teal-600',
-      categoryParam: 'Others',
-    },
-  ];
+  const { data: categoriesFromApi } = useQuery({
+    queryKey: ['userCategories'],
+    queryFn: () => categoryApi.getCategories(),
+  });
+
+  const categories = Array.isArray(categoriesFromApi) && categoriesFromApi.length > 0
+    ? categoriesFromApi
+        .filter((c) => c.parent === 'None (Main Category)' || !c.parent)
+        .map((c) => ({
+          title: c.name,
+          desc: c.description || `Post listings and offers under ${c.name}`,
+          icon: c.icon || '📦',
+          bg: c.name.includes('Layout')
+            ? 'bg-[#fffbeb]'
+            : c.name.includes('Scooter')
+            ? 'bg-[#fefce8]'
+            : c.name.includes('Services')
+            ? 'bg-[#faf5ff]'
+            : c.name.includes('Properties')
+            ? 'bg-[#f0f6ff]'
+            : 'bg-[#f0fdf4]',
+          arrowColor: c.name.includes('Layout')
+            ? 'text-amber-700'
+            : c.name.includes('Services')
+            ? 'text-purple-600'
+            : 'text-blue-600',
+          categoryParam: c.name,
+        }))
+    : [
+        {
+          title: 'Sell Layout Site / Land',
+          desc: 'Post plots, agricultural land & sites',
+          icon: '🗺️',
+          bg: 'bg-[#fffbeb]',
+          arrowColor: 'text-amber-700',
+          categoryParam: 'Layout Sites',
+        },
+        {
+          title: 'Sell / Rent Properties',
+          desc: 'Houses, flats, shops, offices, PGs & commercial properties',
+          icon: '🏢',
+          bg: 'bg-[#f0f6ff]',
+          arrowColor: 'text-blue-600',
+          categoryParam: 'Properties',
+        },
+        {
+          title: 'Rent / Sell EV Scooter',
+          desc: 'Electric scooters, bikes & rental fleets',
+          icon: '🛵',
+          bg: 'bg-[#fefce8]',
+          arrowColor: 'text-amber-700',
+          categoryParam: 'Electric Scooters',
+        },
+        {
+          title: 'Offer Professional Service',
+          desc: 'Interiors, architecture & maintenance',
+          icon: '🛠️',
+          bg: 'bg-[#faf5ff]',
+          arrowColor: 'text-purple-600',
+          categoryParam: 'Services',
+        },
+        {
+          title: 'Other Products & Services',
+          desc: 'General products & promotional ads',
+          icon: '📦',
+          bg: 'bg-[#f0fdf4]',
+          arrowColor: 'text-teal-600',
+          categoryParam: 'Others',
+        },
+      ];
+
 
   return (
     <div className="space-y-6 pb-24 max-w-lg mx-auto px-1 sm:px-0">

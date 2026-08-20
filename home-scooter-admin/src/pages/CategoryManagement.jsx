@@ -40,53 +40,74 @@ export const CategoryManagement = () => {
     queryFn: categoriesApi.getCategories,
   });
 
-  const categoriesList = apiResult?.data || [
-    { id: '1', name: 'Layout Sites', parent: 'None (Main Category)', description: 'Plots, Land & Gated Sites', icon: '🗺️', color: 'bg-amber-100 text-amber-800 border-amber-200', adsCount: 412, isActive: true },
-    { id: '2', name: 'Rent: House & Apartments', parent: 'Properties', description: 'Rental houses, flats & apartments', icon: '🏠', color: 'bg-blue-100 text-blue-800 border-blue-200', adsCount: 328, isActive: true },
-    { id: '3', name: 'Rent: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for rent', icon: '🏬', color: 'bg-blue-100 text-blue-800 border-blue-200', adsCount: 145, isActive: true },
-    { id: '4', name: 'Sale: House & Apartments', parent: 'Properties', description: 'Houses, flats & villas for purchase', icon: '🏡', color: 'bg-teal-100 text-teal-800 border-teal-200', adsCount: 198, isActive: true },
-    { id: '5', name: 'Sale: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for sale', icon: '🏢', color: 'bg-teal-100 text-teal-800 border-teal-200', adsCount: 89, isActive: true },
-    { id: '6', name: 'PG & Guest House', parent: 'Properties', description: 'Paying guest accommodations', icon: '🛏️', color: 'bg-indigo-100 text-indigo-800 border-indigo-200', adsCount: 76, isActive: true },
-    { id: '7', name: 'Properties', parent: 'None (Main Category)', description: 'Rent & Sale Houses, Shops & PGs', icon: '🏢', color: 'bg-blue-100 text-blue-800 border-blue-200', adsCount: 836, isActive: true },
-    { id: '8', name: 'Electric Scooters', parent: 'None (Main Category)', description: 'Daily & Monthly EV Rentals', icon: '🛵', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', adsCount: 154, isActive: true },
-    { id: '9', name: 'Services', parent: 'None (Main Category)', description: 'Interiors, Maintenance & Repairs', icon: '🛠️', color: 'bg-purple-100 text-purple-800 border-purple-200', adsCount: 92, isActive: true },
-    { id: '10', name: 'Others', parent: 'None (Main Category)', description: 'Miscellaneous & Partner Ads', icon: '📦', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', adsCount: 45, isActive: true },
-  ];
+  const categoriesList = Array.isArray(apiResult?.data)
+    ? apiResult.data
+    : Array.isArray(apiResult)
+    ? apiResult
+    : [
+        { id: '1', name: 'Layout Sites', parent: 'None (Main Category)', description: 'Plots, Land & Gated Sites', icon: '🗺️', color: 'bg-amber-100 text-amber-800 border-amber-200', adsCount: 412, isActive: true },
+        { id: '2', name: 'Rent: House & Apartments', parent: 'Properties', description: 'Rental houses, flats & apartments', icon: '🏠', color: 'bg-blue-100 text-blue-800 border-blue-200', adsCount: 328, isActive: true },
+        { id: '3', name: 'Rent: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for rent', icon: '🏬', color: 'bg-blue-100 text-blue-800 border-blue-200', adsCount: 145, isActive: true },
+        { id: '4', name: 'Sale: House & Apartments', parent: 'Properties', description: 'Houses, flats & villas for purchase', icon: '🏡', color: 'bg-teal-100 text-teal-800 border-teal-200', adsCount: 198, isActive: true },
+        { id: '5', name: 'Sale: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for sale', icon: '🏢', color: 'bg-teal-100 text-teal-800 border-teal-200', adsCount: 89, isActive: true },
+        { id: '6', name: 'PG & Guest House', parent: 'Properties', description: 'Paying guest accommodations', icon: '🛏️', color: 'bg-indigo-100 text-indigo-800 border-indigo-200', adsCount: 76, isActive: true },
+        { id: '7', name: 'Properties', parent: 'None (Main Category)', description: 'Rent & Sale Houses, Shops & PGs', icon: '🏢', color: 'bg-blue-100 text-blue-800 border-blue-200', adsCount: 836, isActive: true },
+        { id: '8', name: 'Electric Scooters', parent: 'None (Main Category)', description: 'Daily & Monthly EV Rentals', icon: '🛵', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', adsCount: 154, isActive: true },
+        { id: '9', name: 'Services', parent: 'None (Main Category)', description: 'Interiors, Maintenance & Repairs', icon: '🛠️', color: 'bg-purple-100 text-purple-800 border-purple-200', adsCount: 92, isActive: true },
+        { id: '10', name: 'Others', parent: 'None (Main Category)', description: 'Miscellaneous & Partner Ads', icon: '📦', color: 'bg-emerald-100 text-emerald-800 border-emerald-200', adsCount: 45, isActive: true },
+      ];
 
   const createMutation = useMutation({
     mutationFn: categoriesApi.createCategory,
-    onSuccess: () => {
-      toast.success('New category created & saved in backend database!');
+    onSuccess: (data) => {
+      toast.success(data?.message || 'New category created & saved in backend database!');
       setModalOpen(false);
       queryClient.invalidateQueries(['adminCategories']);
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error.message || 'Failed to create category';
+      toast.error(msg);
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => categoriesApi.updateCategory(id, data),
-    onSuccess: () => {
-      toast.success('Category updated successfully!');
+    onSuccess: (data) => {
+      toast.success(data?.message || 'Category updated successfully!');
       setModalOpen(false);
       queryClient.invalidateQueries(['adminCategories']);
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error.message || 'Failed to update category';
+      toast.error(msg);
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: categoriesApi.toggleCategoryStatus,
-    onSuccess: () => {
-      toast.success('Category status updated');
+    onSuccess: (data) => {
+      toast.success(data?.message || 'Category status updated');
       queryClient.invalidateQueries(['adminCategories']);
+    },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error.message || 'Failed to toggle status';
+      toast.error(msg);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: categoriesApi.deleteCategory,
-    onSuccess: () => {
-      toast.success('Category deleted successfully');
+    onSuccess: (data) => {
+      toast.success(data?.message || 'Category deleted successfully');
       setDeletingId(null);
       queryClient.invalidateQueries(['adminCategories']);
     },
+    onError: (error) => {
+      const msg = error?.response?.data?.message || error.message || 'Failed to delete category';
+      toast.error(msg);
+    },
   });
+
 
   const handleOpenAddModal = () => {
     setEditingCategory(null);

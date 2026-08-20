@@ -69,7 +69,16 @@ const createCategory = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Category created successfully',
-      data: category,
+      data: {
+        id: category._id,
+        _id: category._id,
+        name: category.name,
+        parent: category.parent,
+        description: category.description,
+        icon: category.icon,
+        color: category.color,
+        isActive: category.isActive,
+      },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -100,7 +109,16 @@ const updateCategory = async (req, res) => {
     return res.json({
       success: true,
       message: 'Category updated successfully',
-      data: category,
+      data: {
+        id: category._id,
+        _id: category._id,
+        name: category.name,
+        parent: category.parent,
+        description: category.description,
+        icon: category.icon,
+        color: category.color,
+        isActive: category.isActive,
+      },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -124,8 +142,18 @@ const toggleCategoryStatus = async (req, res) => {
     return res.json({
       success: true,
       message: `Category ${category.isActive ? 'activated' : 'disabled'}`,
-      data: category,
+      data: {
+        id: category._id,
+        _id: category._id,
+        name: category.name,
+        parent: category.parent,
+        description: category.description,
+        icon: category.icon,
+        color: category.color,
+        isActive: category.isActive,
+      },
     });
+
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

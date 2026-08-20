@@ -87,76 +87,117 @@ export const PostAd = () => {
     postMutation.mutate(payload);
   };
 
-  const categoriesList = [
-    {
-      id: 'Layout Sites',
-      title: 'Layout Sites',
-      desc: 'Plots, Land & Gated Sites',
-      icon: '🗺️',
-      bg: 'bg-[#fffbeb]',
-      arrowColor: 'text-amber-700',
-    },
-    {
-      id: 'Properties',
-      title: 'Properties',
-      desc: 'Rent / Sale Houses, Shops, Offices & PGs',
-      icon: '🏢',
-      bg: 'bg-[#f0f6ff]',
-      arrowColor: 'text-blue-600',
-    },
-    {
-      id: 'Electric Scooters',
-      title: 'Electric Scooters',
-      desc: 'Daily & Monthly EV Rentals',
-      icon: '🛵',
-      bg: 'bg-[#fefce8]',
-      arrowColor: 'text-amber-700',
-    },
-    {
-      id: 'Services',
-      title: 'Services',
-      desc: 'Interiors, Maintenance & Repairs',
-      icon: '🛠️',
-      bg: 'bg-[#faf5ff]',
-      arrowColor: 'text-purple-600',
-    },
-    {
-      id: 'Others',
-      title: 'Others',
-      desc: 'Miscellaneous & Partner Ads',
-      icon: '📦',
-      bg: 'bg-[#f0fdf4]',
-      arrowColor: 'text-teal-600',
-    },
-  ];
+  const { data: categoriesFromApi } = useQuery({
+    queryKey: ['userCategories'],
+    queryFn: () => categoryApi.getCategories(),
+  });
 
-  const propertySubcategories = [
-    {
-      title: 'Rent: House & Apartments',
-      desc: 'Rental houses, flats & apartments',
-      icon: '🏠',
-    },
-    {
-      title: 'Rent: Shop & Offices',
-      desc: 'Commercial shops, showrooms & office spaces',
-      icon: '🏬',
-    },
-    {
-      title: 'Sale: House & Apartments',
-      desc: 'Houses, flats & villas for purchase',
-      icon: '🏡',
-    },
-    {
-      title: 'Sale: Shop & Offices',
-      desc: 'Commercial shops & offices for sale',
-      icon: '🏢',
-    },
-    {
-      title: 'PG & Guest House',
-      desc: 'Paying guest accommodations, hostels & co-living',
-      icon: '🛏️',
-    },
-  ];
+  const dynamicCategories = Array.isArray(categoriesFromApi) ? categoriesFromApi : [];
+
+  const categoriesList = dynamicCategories.length > 0
+    ? dynamicCategories
+        .filter((c) => c.parent === 'None (Main Category)' || !c.parent)
+        .map((c) => ({
+          id: c.name,
+          title: c.name,
+          desc: c.description || `Post listings under ${c.name}`,
+          icon: c.icon || '📦',
+          bg: c.name.includes('Layout')
+            ? 'bg-[#fffbeb]'
+            : c.name.includes('Scooter')
+            ? 'bg-[#fefce8]'
+            : c.name.includes('Services')
+            ? 'bg-[#faf5ff]'
+            : c.name.includes('Properties')
+            ? 'bg-[#f0f6ff]'
+            : 'bg-[#f0fdf4]',
+          arrowColor: c.name.includes('Layout')
+            ? 'text-amber-700'
+            : c.name.includes('Services')
+            ? 'text-purple-600'
+            : 'text-blue-600',
+        }))
+    : [
+        {
+          id: 'Layout Sites',
+          title: 'Layout Sites',
+          desc: 'Plots, Land & Gated Sites',
+          icon: '🗺️',
+          bg: 'bg-[#fffbeb]',
+          arrowColor: 'text-amber-700',
+        },
+        {
+          id: 'Properties',
+          title: 'Properties',
+          desc: 'Rent / Sale Houses, Shops, Offices & PGs',
+          icon: '🏢',
+          bg: 'bg-[#f0f6ff]',
+          arrowColor: 'text-blue-600',
+        },
+        {
+          id: 'Electric Scooters',
+          title: 'Electric Scooters',
+          desc: 'Daily & Monthly EV Rentals',
+          icon: '🛵',
+          bg: 'bg-[#fefce8]',
+          arrowColor: 'text-amber-700',
+        },
+        {
+          id: 'Services',
+          title: 'Services',
+          desc: 'Interiors, Maintenance & Repairs',
+          icon: '🛠️',
+          bg: 'bg-[#faf5ff]',
+          arrowColor: 'text-purple-600',
+        },
+        {
+          id: 'Others',
+          title: 'Others',
+          desc: 'Miscellaneous & Partner Ads',
+          icon: '📦',
+          bg: 'bg-[#f0fdf4]',
+          arrowColor: 'text-teal-600',
+        },
+      ];
+
+  const fetchedPropertySubs = dynamicCategories
+    .filter((c) => c.parent === 'Properties')
+    .map((c) => ({
+      title: c.name,
+      desc: c.description || `Properties for ${c.name}`,
+      icon: c.icon || '🏢',
+    }));
+
+  const propertySubcategories = fetchedPropertySubs.length > 0
+    ? fetchedPropertySubs
+    : [
+        {
+          title: 'Rent: House & Apartments',
+          desc: 'Rental houses, flats & apartments',
+          icon: '🏠',
+        },
+        {
+          title: 'Rent: Shop & Offices',
+          desc: 'Commercial shops, showrooms & office spaces',
+          icon: '🏬',
+        },
+        {
+          title: 'Sale: House & Apartments',
+          desc: 'Houses, flats & villas for purchase',
+          icon: '🏡',
+        },
+        {
+          title: 'Sale: Shop & Offices',
+          desc: 'Commercial shops & offices for sale',
+          icon: '🏢',
+        },
+        {
+          title: 'PG & Guest House',
+          desc: 'Paying guest accommodations, hostels & co-living',
+          icon: '🛏️',
+        },
+      ];
+
 
   const handleCategoryClick = (catId) => {
     if (catId === 'Properties') {

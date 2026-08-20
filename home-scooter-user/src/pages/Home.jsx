@@ -37,7 +37,7 @@ export const Home = () => {
     queryFn: () => adsApi.getAds(),
   });
 
-  const { data: categoryResult } = useQuery({
+  const { data: categoriesFromApi } = useQuery({
     queryKey: ['userCategories'],
     queryFn: () => categoryApi.getCategories(),
   });
@@ -63,7 +63,9 @@ export const Home = () => {
     }
   };
 
-  // Category avatar config
+  // Dynamic Category avatar list from backend API
+  const dynamicCategories = Array.isArray(categoriesFromApi) ? categoriesFromApi : [];
+
   const categoriesList = [
     {
       id: 'ALL',
@@ -72,42 +74,24 @@ export const Home = () => {
       isStar: true,
       icon: null,
     },
-    {
-      id: 'Layout Sites',
-      name: 'Layout Sites',
-      borderClass: 'border-2 border-amber-300 bg-amber-50/40 text-amber-600',
-      icon: '🗺️',
-      path: '/categories/layout-sites',
-    },
-    {
-      id: 'Properties',
-      name: 'Properties',
-      borderClass: 'border-2 border-blue-300 bg-blue-50/40 text-blue-600',
-      icon: '🏢',
-      path: '/categories/properties',
-    },
-    {
-      id: 'Electric Scooters',
-      name: 'Electric Scooters',
-      borderClass: 'border-2 border-yellow-400 bg-yellow-50/40 text-yellow-600',
-      icon: '🛵',
-      path: '/categories/electric-scooters',
-    },
-    {
-      id: 'Services',
-      name: 'Services',
-      borderClass: 'border-2 border-purple-300 bg-purple-50/40 text-purple-600',
-      icon: '🛠️',
-      path: '/categories/services',
-    },
-    {
-      id: 'Others',
-      name: 'Others',
-      borderClass: 'border-2 border-slate-300 bg-slate-50/40 text-slate-600',
-      icon: '📦',
-      path: '/categories/others',
-    },
+    ...dynamicCategories
+      .filter((c) => c.parent === 'None (Main Category)' || !c.parent)
+      .map((cat) => ({
+        id: cat.name,
+        name: cat.name,
+        borderClass: cat.name.includes('Layout')
+          ? 'border-2 border-amber-300 bg-amber-50/40 text-amber-600'
+          : cat.name.includes('Scooter')
+          ? 'border-2 border-yellow-400 bg-yellow-50/40 text-yellow-600'
+          : cat.name.includes('Services')
+          ? 'border-2 border-purple-300 bg-purple-50/40 text-purple-600'
+          : cat.name.includes('Properties')
+          ? 'border-2 border-blue-300 bg-blue-50/40 text-blue-600'
+          : 'border-2 border-emerald-300 bg-emerald-50/40 text-emerald-600',
+        icon: cat.icon || '📦',
+      })),
   ];
+
 
   return (
     <div className="space-y-6 pb-20 max-w-lg mx-auto px-1 sm:px-0">

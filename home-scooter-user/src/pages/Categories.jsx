@@ -1,8 +1,19 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { categoryApi } from '../api/categoryApi';
 import { CategoryCard } from '../components/marketplace/CategoryCard';
 import { CATEGORIES } from '../constants/categories';
 
 export const Categories = () => {
+  const { data: categories } = useQuery({
+    queryKey: ['userCategories'],
+    queryFn: () => categoryApi.getCategories(),
+  });
+
+  const categoriesList = Array.isArray(categories) && categories.length > 0
+    ? categories.map((c) => c.name)
+    : Object.values(CATEGORIES);
+
   return (
     <div className="space-y-6">
       <div>
@@ -11,10 +22,11 @@ export const Categories = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        {Object.values(CATEGORIES).map((cat) => (
+        {categoriesList.map((cat) => (
           <CategoryCard key={cat} category={cat} />
         ))}
       </div>
     </div>
   );
 };
+
