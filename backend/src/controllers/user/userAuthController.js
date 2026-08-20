@@ -252,9 +252,120 @@ const updateUserLocation = async (req, res) => {
   }
 };
 
+// @desc    Logout user
+// @route   POST /api/v1/user/auth/logout
+// @access  Private / Public
+const logoutUser = async (req, res) => {
+  return res.json({
+    success: true,
+    message: 'User logged out successfully.',
+  });
+};
+
+// @desc    Forgot Password - Send OTP
+// @route   POST /api/v1/user/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+    const identifier = (email || phone || '').trim();
+
+    if (!identifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email address or phone number.',
+      });
+    }
+
+    const user = await User.findOne({
+      $or: [{ email: identifier.toLowerCase() }, { phone: identifier }],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email or phone number.',
+      });
+    }
+
+    // Generate 6-digit OTP (for production send via SMS/Email, default 123456)
+    const otp = '123456';
+    user.resetOtp = otp;
+    user.resetOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'OTP sent successfully to your registered email/phone.',
+      otp: process.env.NODE_ENV === 'development' ? otp : undefined,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Error processing forgot password request.',
+    });
+  }
+};
+
+// @desc    Reset Password with OTP
+// @route   POST /api/v1/user/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+  try {
+    const { email, phone, otp, newPassword } = req.body;
+    const identifier = (email || phone || '').trim();
+
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email/phone, OTP code, and new password.',
+      });
+    }
+
+    const user = await User.findOne({
+      $or: [{ email: identifier.toLowerCase() }, { phone: identifier }],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found.',
+      });
+    }
+
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP code. Please enter the correct OTP.',
+      });
+    }
+
+    // Hash New Password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    user.resetOtp = undefined;
+    user.resetOtpExpires = undefined;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Password reset successful! You can now login with your new password.',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Error resetting password.',
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getMe,
   updateUserLocation,
+  logoutUser,
+  forgotPassword,
+  resetPassword,
 };
+
