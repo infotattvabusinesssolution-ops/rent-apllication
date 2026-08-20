@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
 import { adsApi } from '../api/adsApi';
 import { CATEGORIES } from '../constants/categories';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import {
 export const PostAd = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const initialCategory = searchParams.get('category') || CATEGORIES.LAYOUT_SITES;
 
   const [step, setStep] = useState(searchParams.get('category') ? 2 : 1); // 1: Select Category, 2: Ad Details & Photos
@@ -24,6 +26,7 @@ export const PostAd = () => {
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [dimensions, setDimensions] = useState('');
   const [description, setDescription] = useState('');
 
@@ -35,8 +38,11 @@ export const PostAd = () => {
   const postMutation = useMutation({
     mutationFn: adsApi.postAd,
     onSuccess: (res) => {
-      toast.success(res.message || 'Advertisement submitted for review!');
+      toast.success(res?.message || 'Advertisement submitted for review!');
       navigate('/my-ads');
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to post advertisement. Please try again.');
     },
   });
 
@@ -57,10 +63,12 @@ export const PostAd = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title || !price || !description) {
+    if (!title || !price || !description || !phone) {
       toast.error('Please fill in all required fields');
       return;
     }
+
+    const formattedPhone = phone.startsWith('+') ? phone : `+91 ${phone.trim()}`;
 
     const payload = {
       category,
@@ -71,6 +79,9 @@ export const PostAd = () => {
       description,
       dimensions,
       imageUrls: images,
+      posterName: user?.name || 'Seller',
+      posterPhone: formattedPhone,
+      posterId: user?.id || user?.userId || 'USR-8821',
     };
 
     postMutation.mutate(payload);
@@ -347,6 +358,21 @@ export const PostAd = () => {
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Indiranagar, Electronic City"
                 className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
+              />
+            </div>
+
+            {/* Field: Contact Phone Number */}
+            <div>
+              <label className="font-serif font-bold text-slate-900 text-sm mb-1.5 block">
+                Contact Phone Number (For WhatsApp Leads)
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. 6370362109 or +91 6370362109"
+                className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 font-serif text-slate-800 text-sm placeholder:text-slate-400 font-light outline-none focus:border-blue-600 focus:bg-white transition-all"
+                required
               />
             </div>
 

@@ -1,41 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { callbackApi } from '../../api/callbackApi';
+import axiosClient from '../../api/axiosClient';
 import { toast } from 'sonner';
 import { X, Send } from 'lucide-react';
 
 export const CustomerVerifiedSlipModal = ({ isOpen, onClose, ad }) => {
   const { user, selectedLocation } = useAuth();
 
-  // Form Fields State
+  // Form Fields State (Buyer Details - User B)
   const [productRequired, setProductRequired] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPlace, setCustomerPlace] = useState('');
   const [customerContact, setCustomerContact] = useState('');
   const [customerWhatsapp, setCustomerWhatsapp] = useState('');
 
+  // Seller / Admin Configured Dealer Details State (Under SENT TO)
+  const [dealerName, setDealerName] = useState('');
+  const [dealerPhone, setDealerPhone] = useState('');
+  const [dealerWhatsapp, setDealerWhatsapp] = useState('');
+
   useEffect(() => {
+    let isMounted = true;
+
+    const loadDealerDetails = async () => {
+      // 1. Check if specific ad has custom poster details
+      const adPosterName = ad?.posterName || ad?.user?.name || ad?.sellerName;
+      const adPosterPhone = ad?.posterPhone || ad?.user?.phone || ad?.sellerPhone;
+
+      try {
+        // Fetch Admin Configured Settings from backend
+        const res = await axiosClient.get('/v1/user/settings');
+        if (isMounted) {
+          const adminDealerName = res?.dealerName || res?.settings?.dealerName;
+          const adminDealerPhone = res?.dealerPhone || res?.settings?.dealerPhone;
+          const adminDealerWhatsapp = res?.dealerWhatsapp || res?.settings?.dealerWhatsapp;
+
+          const finalName = adminDealerName || adPosterName || 'Hoskote Realties';
+          const finalPhone = adminDealerPhone || adPosterPhone || '+91 98765 43210';
+          const finalWhatsapp = adminDealerWhatsapp || adminDealerPhone || adPosterPhone || '+91 98765 43210';
+
+          const formattedPhone = finalPhone.startsWith('+') ? finalPhone : `+91 ${finalPhone}`;
+          const formattedWhatsapp = finalWhatsapp.startsWith('+') ? finalWhatsapp : `+91 ${finalWhatsapp}`;
+
+          setDealerName(finalName);
+          setDealerPhone(formattedPhone);
+          setDealerWhatsapp(formattedWhatsapp);
+        }
+      } catch (e) {
+        if (isMounted) {
+          const finalName = adPosterName || 'Hoskote Realties';
+          const finalPhone = adPosterPhone || '+91 98765 43210';
+          const formattedPhone = finalPhone.startsWith('+') ? finalPhone : `+91 ${finalPhone}`;
+
+          setDealerName(finalName);
+          setDealerPhone(formattedPhone);
+          setDealerWhatsapp(formattedPhone);
+        }
+      }
+    };
+
     if (ad) {
-      setProductRequired(ad.title || 'MUDA Approved Layout Sites in Mysore');
+      setProductRequired(ad.title || '');
+      loadDealerDetails();
     }
-    setCustomerName(user?.name || 'Gyan123priya');
-    setCustomerPlace(selectedLocation || 'Bangalore, Karnataka');
-    setCustomerContact(user?.phone || user?.email || 'gyan123priya@gmail.com');
-    setCustomerWhatsapp(user?.phone || user?.email || 'gyan123priya@gmail.com');
+
+    setCustomerName(user?.name || '');
+    setCustomerPlace(selectedLocation || '');
+    setCustomerContact(user?.phone || user?.email || '');
+    setCustomerWhatsapp(user?.phone || user?.email || '');
+
+    return () => {
+      isMounted = false;
+    };
   }, [ad, user, selectedLocation]);
 
   if (!isOpen || !ad) return null;
 
-  const dealerName = ad.posterName || 'MUDA Layout Developers';
-  const dealerPhone = ad.posterPhone || '8951285146';
-  const dealerWhatsapp = dealerPhone.startsWith('+') ? dealerPhone : `+91 ${dealerPhone}`;
-
   const handleSendToWhatsapp = async () => {
+    const leadPayload = {
+      adId: ad.id || ad.adId,
+      adTitle: productRequired || ad.title,
+      posterName: dealerName,
+      posterPhone: dealerPhone,
+      buyerName: customerName,
+      buyerPhone: customerContact,
+      buyerWhatsapp: customerWhatsapp,
+      location: customerPlace,
+    };
+
     try {
-      // Trigger callback API in backend
-      await callbackApi.requestCallback(ad.id);
+      // Log inquiry lead in database
+      await callbackApi.requestCallback(leadPayload);
     } catch (e) {
-      console.log('Callback log failed, continuing to WhatsApp');
+      console.log('Callback log failed, proceeding to open WhatsApp');
     }
 
     const message = `*CUSTOMER VERIFIED SLIP (CVS)*
@@ -46,7 +104,7 @@ export const CustomerVerifiedSlipModal = ({ isOpen, onClose, ad }) => {
 4) *Contact Number:* ${customerContact}
 5) *Whatsapp Number:* ${customerWhatsapp}
 
-*SENT TO DEALER:*
+*SENT TO:*
 6) *Dealer Name:* ${dealerName}
 7) *Contact Number:* ${dealerPhone}
 8) *Whatsapp Number:* ${dealerWhatsapp}`;
@@ -56,7 +114,7 @@ export const CustomerVerifiedSlipModal = ({ isOpen, onClose, ad }) => {
     const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
 
     window.open(whatsappUrl, '_blank');
-    toast.success('Verified Slip created & WhatsApp opened!');
+    toast.success(`Verified Slip created & sent to ${dealerName || 'Dealer'}'s WhatsApp!`);
     onClose();
   };
 
@@ -163,9 +221,13 @@ export const CustomerVerifiedSlipModal = ({ isOpen, onClose, ad }) => {
             <label className="font-serif font-bold text-blue-950 text-xs sm:text-sm mb-1.5 block">
               6) Dealer Name
             </label>
-            <div className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-3.5 font-serif font-bold text-slate-800 text-sm">
-              {dealerName}
-            </div>
+            <input
+              type="text"
+              value={dealerName}
+              onChange={(e) => setDealerName(e.target.value)}
+              placeholder="Enter dealer / poster name"
+              className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-3.5 font-serif font-bold text-slate-800 text-sm outline-none focus:border-blue-600 focus:bg-white transition-all"
+            />
           </div>
 
           {/* Field 7: Contact Number */}
@@ -173,9 +235,13 @@ export const CustomerVerifiedSlipModal = ({ isOpen, onClose, ad }) => {
             <label className="font-serif font-bold text-blue-950 text-xs sm:text-sm mb-1.5 block">
               7) Contact Number
             </label>
-            <div className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-3.5 font-serif font-bold text-slate-800 text-sm">
-              {dealerPhone}
-            </div>
+            <input
+              type="text"
+              value={dealerPhone}
+              onChange={(e) => setDealerPhone(e.target.value)}
+              placeholder="Enter dealer contact number"
+              className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-3.5 font-serif font-bold text-slate-800 text-sm outline-none focus:border-blue-600 focus:bg-white transition-all"
+            />
           </div>
 
           {/* Field 8: Whatsapp Number */}
@@ -183,9 +249,13 @@ export const CustomerVerifiedSlipModal = ({ isOpen, onClose, ad }) => {
             <label className="font-serif font-bold text-blue-950 text-xs sm:text-sm mb-1.5 block">
               8) Whatsapp Number
             </label>
-            <div className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-3.5 font-serif font-bold text-slate-800 text-sm">
-              {dealerWhatsapp}
-            </div>
+            <input
+              type="text"
+              value={dealerWhatsapp}
+              onChange={(e) => setDealerWhatsapp(e.target.value)}
+              placeholder="Enter dealer whatsapp number"
+              className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-3.5 font-serif font-bold text-slate-800 text-sm outline-none focus:border-blue-600 focus:bg-white transition-all"
+            />
           </div>
 
           {/* Primary Action Button: SEND TO WHATSAPP */}

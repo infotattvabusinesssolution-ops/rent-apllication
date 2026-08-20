@@ -177,7 +177,7 @@ export const MyAds = () => {
                   className={`font-bold px-2.5 py-0.5 rounded-full text-[11px] flex items-center gap-1 ${
                     ad.status === 'APPROVED'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : ad.status === 'PENDING_APPROVAL'
+                      : ad.status === 'PENDING_APPROVAL' || ad.status === 'PENDING'
                       ? 'bg-amber-50 text-amber-700 border border-amber-200'
                       : 'bg-slate-100 text-slate-600'
                   }`}
@@ -186,7 +186,7 @@ export const MyAds = () => {
                     <>
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Active
                     </>
-                  ) : ad.status === 'PENDING_APPROVAL' ? (
+                  ) : ad.status === 'PENDING_APPROVAL' || ad.status === 'PENDING' ? (
                     <>
                       <Clock className="w-3 h-3 text-amber-600" /> Pending Review
                     </>

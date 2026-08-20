@@ -1,49 +1,43 @@
 import axiosClient from './axiosClient';
-import { MOCK_CHATS } from '../mock/mockData';
-
-let localChats = [...MOCK_CHATS];
 
 export const chatApi = {
-  getConversations: async () => {
+  // Get all active chats for user
+  getChats: async (userId) => {
     try {
-      return await axiosClient.get('/api/v1/chats');
+      const res = await axiosClient.get('/v1/user/chats', { params: { userId } });
+      return res;
     } catch (err) {
-      return { data: localChats, total: localChats.length };
+      return { success: true, chats: [] };
     }
   },
 
+  // Start or fetch chat for an ad
+  startChat: async (payload) => {
+    try {
+      const res = await axiosClient.post('/v1/user/chats/start', payload);
+      return res;
+    } catch (err) {
+      return { success: false, message: 'Failed to start chat' };
+    }
+  },
+
+  // Get messages for a chat conversation
   getChatMessages: async (chatId) => {
     try {
-      return await axiosClient.get(`/api/v1/chats/${chatId}`);
+      const res = await axiosClient.get(`/v1/user/chats/${chatId}/messages`);
+      return res;
     } catch (err) {
-      const chat = localChats.find((c) => c.id === chatId);
-      if (chat) return chat;
-      return localChats[0];
+      return { success: false, messages: [] };
     }
   },
 
-  sendMessage: async (chatId, text) => {
+  // Send a new message
+  sendMessage: async (chatId, payload) => {
     try {
-      return await axiosClient.post(`/api/v1/chats/${chatId}/messages`, { text });
+      const res = await axiosClient.post(`/v1/user/chats/${chatId}/messages`, payload);
+      return res;
     } catch (err) {
-      const newMsg = {
-        id: `m-${Date.now()}`,
-        sender: 'buyer',
-        text,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      localChats = localChats.map((c) => {
-        if (c.id === chatId) {
-          return {
-            ...c,
-            lastMessage: text,
-            lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      });
-      return { success: true, message: newMsg };
+      return { success: false, message: 'Failed to send message' };
     }
   },
 };

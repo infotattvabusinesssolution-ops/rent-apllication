@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adsApi } from '../api/adsApi';
 import { callbackApi } from '../api/callbackApi';
+import { chatApi } from '../api/chatApi';
+import { favoritesApi } from '../api/favoritesApi';
 import { ReportAdModal } from '../components/marketplace/ReportAdModal';
 import { CustomerVerifiedSlipModal } from '../components/marketplace/CustomerVerifiedSlipModal';
 import { formatCurrency, formatCompactViews, timeAgo } from '../utils/formatters';
@@ -19,11 +21,13 @@ import {
   ThumbsUp,
   Flag,
   ShieldCheck,
+  MessageSquare,
 } from 'lucide-react';
 
 export const AdDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isCvsOpen, setIsCvsOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -46,10 +50,30 @@ export const AdDetail = () => {
     },
   });
 
+  const handleStartChat = async () => {
+    try {
+      const res = await chatApi.startChat({
+        adId: ad?.id || ad?.adId || id,
+        buyerId: user?.id || user?.userId || 'USR-8821',
+        buyerName: user?.name || 'Buyer',
+        buyerPhone: user?.phone || '',
+      });
+      if (res?.success && res?.chat) {
+        navigate(`/chats/${res.chat.id || res.chat.chatId}`);
+      } else {
+        toast.error('Unable to start chat with seller');
+      }
+    } catch (e) {
+      toast.error('Failed to start chat');
+    }
+  };
+
   const handleFavoriteClick = async () => {
     try {
-      const res = await adsApi.toggleFavorite(id);
+      const targetId = ad?.id || ad?.adId || id;
+      const res = await favoritesApi.toggleFavorite(targetId, user?.id || user?.userId || 'USR-8821');
       setIsFavorite(res.isFavorite);
+      queryClient.invalidateQueries(['myFavorites']);
       toast.success(res.isFavorite ? 'Saved to Favorites' : 'Removed from Favorites');
     } catch (e) {
       setIsFavorite(!isFavorite);
@@ -287,13 +311,21 @@ export const AdDetail = () => {
         </div>
       </div>
 
-      {/* Fixed Bottom Action Button ("I'm Interested") */}
-      <div className="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto">
+      {/* Fixed Bottom Action Buttons ("Chat Seller" & "I'm Interested") */}
+      <div className="fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto flex items-center gap-2">
+        <button
+          onClick={handleStartChat}
+          className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-serif font-bold text-xs sm:text-sm py-3.5 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+        >
+          <MessageSquare className="w-4 h-4 text-blue-400" />
+          <span>Chat Seller</span>
+        </button>
+
         <button
           onClick={() => setIsCvsOpen(true)}
-          className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-serif font-bold text-base sm:text-lg py-3.5 px-6 rounded-2xl shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2 cursor-pointer transition-all"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-serif font-bold text-xs sm:text-sm py-3.5 px-4 rounded-2xl shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
         >
-          <ThumbsUp className="w-5 h-5 fill-white/20 text-white" />
+          <ThumbsUp className="w-4 h-4 fill-white/20 text-white" />
           <span>I'm Interested</span>
         </button>
       </div>

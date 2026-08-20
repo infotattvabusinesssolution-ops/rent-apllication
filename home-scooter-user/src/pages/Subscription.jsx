@@ -1,180 +1,208 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { subscriptionApi } from '../api/subscriptionApi';
-import { Card } from '../components/common/Card';
-import { Button } from '../components/common/Button';
-import { Badge } from '../components/common/Badge';
-import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axiosClient from '../api/axiosClient';
+import { useAuth } from '../context/AuthContext';
 import {
-  Crown,
-  CheckCircle2,
-  QrCode,
-  Send,
-  ShieldCheck,
+  ArrowLeft,
+  Award,
+  MessageSquare,
+  Ban,
+  Star,
   Key,
-  Copy,
-  Calendar,
-  Lock,
+  ThumbsUp,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Subscription = () => {
-  const [copied, setCopied] = useState(false);
-  const [upiTransactionId, setUpiTransactionId] = useState('');
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const { data: status } = useQuery({
-    queryKey: ['subscriptionStatus'],
-    queryFn: subscriptionApi.getSubscriptionStatus,
-  });
-
-  const submitMutation = useMutation({
-    mutationFn: (txId) => subscriptionApi.submitSubscriptionPayment({ upiTransactionId: txId }),
-    onSuccess: (res) => {
-      toast.success(res.message);
+  // Fetch live Admin payment settings (QR Code, UPI ID, price, WhatsApp)
+  const { data: settingsData } = useQuery({
+    queryKey: ['publicSettings'],
+    queryFn: async () => {
+      try {
+        const res = await axiosClient.get('/v1/user/settings');
+        return res;
+      } catch (e) {
+        return {
+          paymentQrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=rentapp@upi%26pn=Home%20And%20Scooter%26am=100',
+          upiId: 'rentapp@upi',
+          subscriptionPrice: 100,
+          dealerWhatsapp: '+91 98765 43210',
+        };
+      }
     },
   });
 
-  const handleCopyUPI = () => {
-    navigator.clipboard.writeText('rentapp@upi');
-    setCopied(true);
-    toast.success('UPI ID copied to clipboard!');
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const paymentQrCodeUrl = settingsData?.paymentQrCodeUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=rentapp@upi%26pn=Home%20And%20Scooter%26am=100';
+  const upiId = settingsData?.upiId || 'rentapp@upi';
+  const price = settingsData?.subscriptionPrice || 100;
+  const whatsappNum = settingsData?.dealerWhatsapp || '+91 98765 43210';
 
   const handleWhatsAppSend = () => {
+    const cleanNum = whatsappNum.replace(/[^0-9]/g, '');
     const text = encodeURIComponent(
-      `Hello Home & Scooter Admin, I paid ₹100 for subscription. My UPI Reference ID: ${upiTransactionId || 'UPI/423981099881'}`
+      `Hello Admin, I have completed the subscription payment of ₹${price}/-. User: ${user?.name || 'Guest'} (${user?.phone || 'No phone'}). Please activate my account facilities.`
     );
-    window.open(`https://wa.me/919876543210?text=${text}`, '_blank');
+    window.open(`https://wa.me/${cleanNum}?text=${text}`, '_blank');
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 rounded-3xl p-8 text-white text-center space-y-3 shadow-xl">
-        <div className="inline-flex items-center gap-1.5 bg-amber-400/20 text-amber-300 text-xs font-black px-4 py-1.5 rounded-full border border-amber-400/30">
-          <Crown className="w-4 h-4" /> Subscription Membership
+    <div className="space-y-5 pb-20 max-w-lg mx-auto px-2 sm:px-0 font-serif">
+      {/* Header Bar */}
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 text-slate-800 hover:text-slate-900 transition-colors cursor-pointer"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          Subscription Model
+        </h1>
+      </div>
+
+      {/* Member Exclusive Card (Vibrant Blue) */}
+      <div className="bg-blue-600 rounded-3xl p-5 text-white shadow-md shadow-blue-500/20 space-y-3">
+        <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">
+          <Award className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+          <span>MEMBER EXCLUSIVE</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Become a Subscriber for Just ₹100/-</h1>
-        <p className="text-xs sm:text-sm text-blue-100 max-w-xl mx-auto font-medium">
-          Enjoy 10 days of advertisement-free marketplace browsing, exclusive facilities, and priority seller updates.
+
+        <h2 className="text-2xl font-bold leading-tight">
+          Become a Subscriber for Just ₹{price}/-
+        </h2>
+
+        <p className="text-blue-100 text-xs font-light">
+          Enjoy exclusive benefits and stay connected with us.
         </p>
       </div>
 
-      {/* Main 2-Column Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Left Column: Benefits */}
-        <Card className="p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-black text-slate-900">Subscriber Benefits & Rules</h3>
-            <p className="text-xs text-slate-500 mt-0.5">What you receive with your ₹100 plan</p>
+      {/* How to Subscribe Section */}
+      <div className="space-y-4 pt-1">
+        <h3 className="font-bold text-slate-900 text-lg">How to Subscribe:</h3>
+
+        {/* Step 1 Card: Scan QR Code */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+              1
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm leading-snug pt-0.5">
+              Pay the subscription fee of ₹{price}/- by scanning our QR Code.
+            </h4>
           </div>
 
-          <div className="space-y-4 text-xs font-semibold text-slate-700">
-            <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-slate-900 text-sm">10 Days Advertisement-Free Access</p>
-                <p className="text-slate-500 font-normal mt-0.5">Enjoy 3 + 7 Days = 10 Days total ad-free marketplace experience.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-slate-900 text-sm">Exclusive Subscriber Facilities</p>
-                <p className="text-slate-500 font-normal mt-0.5">Priority callback requests and direct seller WhatsApp contact access.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-slate-900 text-sm">Personal Credentials Generated</p>
-                <p className="text-slate-500 font-normal mt-0.5">Receive unique Username & Password upon admin payment verification.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Credentials Summary */}
-          {status?.isSubscribed && (
-            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-900 flex items-center gap-1">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Active Membership Status
-                </span>
-                <Badge variant="success">10 DAYS ACTIVE</Badge>
-              </div>
-              <p className="text-emerald-800">
-                Expires on: <strong className="font-black text-emerald-950">28 Aug 2026</strong> ({status.daysRemaining} days remaining)
-              </p>
-            </div>
-          )}
-        </Card>
-
-        {/* Right Column: Payment & Screenshot Submission */}
-        <Card className="p-6 space-y-6">
-          <div>
-            <h3 className="text-lg font-black text-slate-900">Pay ₹100 via UPI</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Scan QR code or use official UPI ID below</p>
-          </div>
-
-          {/* QR Code Graphic Container */}
-          <div className="p-6 bg-slate-900 text-white rounded-2xl text-center space-y-4 border border-slate-800">
-            <div className="w-44 h-44 bg-white p-3 rounded-2xl mx-auto flex items-center justify-center shadow-lg">
-              {/* Simulated Crisp QR Code */}
-              <div className="w-full h-full border-4 border-slate-900 rounded-lg p-2 flex flex-col justify-between">
-                <div className="flex justify-between">
-                  <div className="w-8 h-8 bg-slate-900 rounded-md" />
-                  <div className="w-8 h-8 bg-slate-900 rounded-md" />
-                </div>
-                <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
-                  ₹100 UPI QR
-                </div>
-                <div className="flex justify-between">
-                  <div className="w-8 h-8 bg-slate-900 rounded-md" />
-                  <div className="w-4 h-4 bg-blue-600 rounded-xs" />
-                </div>
-              </div>
+          {/* QR Code Container */}
+          <div className="bg-[#f8fafc] border border-slate-200/80 rounded-3xl p-5 text-center space-y-3">
+            <div className="w-48 h-48 bg-white p-3 rounded-2xl mx-auto border border-slate-200/80 shadow-sm flex items-center justify-center">
+              <img
+                src={paymentQrCodeUrl}
+                alt="Payment QR Code"
+                className="w-full h-full object-contain"
+              />
             </div>
 
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Official Marketplace UPI ID</span>
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-mono text-sm font-black text-emerald-400">rentapp@upi</span>
-                <button
-                  onClick={handleCopyUPI}
-                  className="p-1.5 text-slate-300 hover:text-white bg-slate-800 rounded-lg cursor-pointer transition-colors"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <p className="text-slate-600 font-bold text-xs">
+                Scan with GPay, PhonePe, Paytm or any UPI App
+              </p>
+              <p className="text-blue-600 font-bold text-xs">
+                UPI ID: {upiId} • Amount: ₹{price}/-
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* Submission Steps */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Enter UPI Ref/UTR Number
-            </label>
-            <input
-              type="text"
-              value={upiTransactionId}
-              onChange={(e) => setUpiTransactionId(e.target.value)}
-              placeholder="e.g. UPI/423981099881"
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
-            />
-
-            <Button
-              variant="success"
-              size="lg"
-              className="w-full font-bold"
-              onClick={handleWhatsAppSend}
-              icon={Send}
-            >
-              Send Payment Screenshot on WhatsApp
-            </Button>
+        {/* Step 2 Card: WhatsApp Screenshot Confirmation */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+              2
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm leading-snug pt-0.5">
+              After payment, send the payment screenshot via WhatsApp for confirmation.
+            </h4>
           </div>
-        </Card>
+
+          <button
+            onClick={handleWhatsAppSend}
+            className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+          >
+            <MessageSquare className="w-5 h-5 fill-white text-[#16a34a]" />
+            <span>Send Payment Screenshot on WhatsApp</span>
+          </button>
+        </div>
+
+        {/* Step 3 Card: Activation Credentials */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+              3
+            </div>
+            <h4 className="font-bold text-slate-900 text-sm leading-snug pt-0.5">
+              Once your subscription is activated, you will receive your Username & Password to access the subscribed member facilities.
+            </h4>
+          </div>
+        </div>
+      </div>
+
+      {/* Subscriber Benefits Section */}
+      <div className="space-y-3 pt-2">
+        <h3 className="font-bold text-slate-900 text-lg">Subscriber Benefits:</h3>
+
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs divide-y divide-slate-100 space-y-3">
+          {/* Benefit 1 */}
+          <div className="flex items-center gap-4 pt-1">
+            <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+              <Ban className="w-5 h-5" />
+            </div>
+            <p className="font-bold text-slate-900 text-xs sm:text-sm">
+              Advertisement-Free Access for 3 + 7 Days
+            </p>
+          </div>
+
+          {/* Benefit 2 */}
+          <div className="flex items-center gap-4 pt-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Star className="w-5 h-5 fill-blue-600 text-blue-600" />
+            </div>
+            <p className="font-bold text-slate-900 text-xs sm:text-sm">
+              Access to exclusive subscriber facilities and benefits
+            </p>
+          </div>
+
+          {/* Benefit 3 */}
+          <div className="flex items-center gap-4 pt-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <MessageSquare className="w-5 h-5 fill-emerald-600 text-emerald-600" />
+            </div>
+            <p className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
+              Details of additional benefits, updates, and special offers will be communicated directly through WhatsApp
+            </p>
+          </div>
+
+          {/* Benefit 4 */}
+          <div className="flex items-center gap-4 pt-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <Key className="w-5 h-5" />
+            </div>
+            <p className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
+              Personal Username & Password will be provided to every subscribed member.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Callout Banner */}
+      <div className="bg-[#eff6ff] border border-blue-200/80 rounded-2xl p-4 flex items-center gap-3">
+        <ThumbsUp className="w-6 h-6 text-blue-600 fill-blue-600 shrink-0" />
+        <p className="text-blue-900 font-bold text-xs sm:text-sm leading-snug">
+          Subscribe today and enjoy a better, more convenient experience!
+        </p>
       </div>
     </div>
   );

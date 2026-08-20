@@ -17,7 +17,12 @@ const {
   submitSubscription,
 } = require('../../../../controllers/user/userInteractionController');
 
+const { getPublicSettings } = require('../../../../controllers/settingsController');
+
 const upload = require('../../../../middleware/uploadMiddleware');
+
+// Settings & Public Config Route
+router.get('/settings', getPublicSettings);
 
 // Ads & Marketplace Routes
 router.get('/ads', getAds);

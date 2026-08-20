@@ -1,5 +1,13 @@
+const mongoose = require('mongoose');
 const Advertisement = require('../models/Advertisement');
 const { AD_STATUS } = require('../config/constants');
+
+const buildAdQuery = (id) => {
+  if (mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id) {
+    return { $or: [{ adId: id }, { _id: id }] };
+  }
+  return { adId: id };
+};
 
 // @desc    Get all advertisements with filtering & pagination
 // @route   GET /api/v1/admin/ads
@@ -102,7 +110,7 @@ const getPendingAds = async (req, res) => {
 // @access  Private (Admin)
 const getAdById = async (req, res) => {
   try {
-    const ad = await Advertisement.findOne({ $or: [{ adId: req.params.id }, { _id: req.params.id }] });
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
     if (!ad) {
       return res.status(404).json({ success: false, message: 'Advertisement not found' });
     }
@@ -118,7 +126,7 @@ const getAdById = async (req, res) => {
 // @access  Private (Admin)
 const approveAd = async (req, res) => {
   try {
-    const ad = await Advertisement.findOne({ $or: [{ adId: req.params.id }, { _id: req.params.id }] });
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
     if (!ad) {
       return res.status(404).json({ success: false, message: 'Advertisement not found' });
     }
@@ -140,7 +148,7 @@ const approveAd = async (req, res) => {
 const rejectAd = async (req, res) => {
   try {
     const { reason, notes } = req.body;
-    const ad = await Advertisement.findOne({ $or: [{ adId: req.params.id }, { _id: req.params.id }] });
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
 
     if (!ad) {
       return res.status(404).json({ success: false, message: 'Advertisement not found' });
@@ -163,7 +171,7 @@ const rejectAd = async (req, res) => {
 const updateBadges = async (req, res) => {
   try {
     const { isFeatured, isHighDemand } = req.body;
-    const ad = await Advertisement.findOne({ $or: [{ adId: req.params.id }, { _id: req.params.id }] });
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
 
     if (!ad) {
       return res.status(404).json({ success: false, message: 'Advertisement not found' });
@@ -184,7 +192,7 @@ const updateBadges = async (req, res) => {
 // @access  Private (Admin)
 const unpublishAd = async (req, res) => {
   try {
-    const ad = await Advertisement.findOne({ $or: [{ adId: req.params.id }, { _id: req.params.id }] });
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
     if (!ad) {
       return res.status(404).json({ success: false, message: 'Advertisement not found' });
     }
@@ -203,7 +211,7 @@ const unpublishAd = async (req, res) => {
 // @access  Private (Admin)
 const deleteAd = async (req, res) => {
   try {
-    const ad = await Advertisement.findOneAndDelete({ $or: [{ adId: req.params.id }, { _id: req.params.id }] });
+    const ad = await Advertisement.findOneAndDelete(buildAdQuery(req.params.id));
     if (!ad) {
       return res.status(404).json({ success: false, message: 'Advertisement not found' });
     }

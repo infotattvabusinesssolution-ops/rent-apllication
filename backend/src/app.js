@@ -26,8 +26,8 @@ app.use(
 );
 
 // Request Parsers & Logging
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
@@ -62,7 +62,10 @@ app.use('/api/v1/admin/visitor-win', require('./routes/api/v1/admin/visitorWin.r
 app.use('/api/v1/admin/settings', require('./routes/api/v1/admin/settings.routes'));
 
 // User Marketplace REST Routes Mount
+app.use('/api/v1/user/auth', require('./routes/api/v1/user/userAuth.routes'));
 app.use('/api/v1/user/categories', require('./routes/api/v1/admin/categories.routes'));
+app.use('/api/v1/user/chats', require('./routes/api/v1/user/chat.routes'));
+app.use('/api/v1/user/favorites', require('./routes/api/v1/user/favorite.routes'));
 app.use('/api/v1/user', require('./routes/api/v1/user/user.routes'));
 
 // Error Middlewares

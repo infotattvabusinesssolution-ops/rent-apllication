@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Heart, MapPin, Eye, Star, Flame, Sparkles } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { formatCurrency, formatCompactViews, timeAgo } from '../../utils/formatters';
-import { adsApi } from '../../api/adsApi';
+import { favoritesApi } from '../../api/favoritesApi';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 
 export const ListingCard = ({ ad, onFavoriteToggle }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(ad.isFavorite || false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -15,10 +19,12 @@ export const ListingCard = ({ ad, onFavoriteToggle }) => {
     e.stopPropagation();
     setIsSaving(true);
     try {
-      const res = await adsApi.toggleFavorite(ad.id);
+      const targetId = ad.id || ad.adId || ad._id;
+      const res = await favoritesApi.toggleFavorite(targetId, user?.id || user?.userId || 'USR-3894');
       setIsFavorite(res.isFavorite);
+      queryClient.invalidateQueries(['myFavorites']);
       toast.success(res.isFavorite ? 'Saved to Favorites' : 'Removed from Favorites');
-      if (onFavoriteToggle) onFavoriteToggle(ad.id, res.isFavorite);
+      if (onFavoriteToggle) onFavoriteToggle(targetId, res.isFavorite);
     } catch (err) {
       toast.error('Unable to update favorite');
     } finally {

@@ -7,7 +7,7 @@ export const adsApi = {
   getAds: async (params = {}) => {
     try {
       const res = await axiosClient.get('/v1/user/ads', { params });
-      return res.data;
+      return res;
     } catch (err) {
       let result = localAds.filter((ad) => ad.status === 'APPROVED');
       
@@ -53,7 +53,7 @@ export const adsApi = {
   getAdById: async (id) => {
     try {
       const res = await axiosClient.get(`/v1/user/ads/${id}`);
-      return res.data;
+      return res;
     } catch (err) {
       const found = localAds.find((ad) => ad.id === id);
       if (found) return found;
@@ -65,7 +65,7 @@ export const adsApi = {
     try {
       const config = adData instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
       const res = await axiosClient.post('/v1/user/ads', adData, config);
-      return res.data;
+      return res;
     } catch (err) {
       const newAd = {
         id: `AD${Math.floor(1000 + Math.random() * 9000)}`,
@@ -81,8 +81,9 @@ export const adsApi = {
         imageUrls: adData.imageUrls || [
           'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
         ],
-        posterName: 'Gyana Prakash',
-        posterPhone: '+91 98765 43210',
+        posterName: adData.posterName || 'Seller',
+        posterPhone: adData.posterPhone || '+91 98765 43210',
+        posterId: adData.posterId || 'USR-8821',
         postedAt: new Date().toISOString(),
         timeAgo: 'Just now',
         viewsCount: 1,
@@ -105,7 +106,7 @@ export const adsApi = {
   getMyAds: async (status = 'ALL') => {
     try {
       const res = await axiosClient.get('/v1/user/my-ads', { params: { status } });
-      return res.data;
+      return res;
     } catch (err) {
       let myAds = localAds.filter((ad) => ad.posterId === 'USR-8821' || ad.posterName === 'Gyana Prakash' || ad.posterName === 'Hoskote Realties');
       if (status && status !== 'ALL') {
@@ -118,7 +119,7 @@ export const adsApi = {
   updateAd: async (id, adData) => {
     try {
       const res = await axiosClient.put(`/v1/user/my-ads/${id}`, adData);
-      return res.data;
+      return res;
     } catch (err) {
       localAds = localAds.map((ad) => (ad.id === id ? { ...ad, ...adData } : ad));
       return { success: true, message: 'Ad updated' };
@@ -128,7 +129,7 @@ export const adsApi = {
   deleteAd: async (id) => {
     try {
       const res = await axiosClient.delete(`/v1/user/my-ads/${id}`);
-      return res.data;
+      return res;
     } catch (err) {
       localAds = localAds.filter((ad) => ad.id !== id);
       return { success: true, message: 'Ad deleted' };
@@ -137,9 +138,10 @@ export const adsApi = {
 
 
 
-  toggleFavorite: async (id) => {
+  toggleFavorite: async (id, userId) => {
     try {
-      return await axiosClient.post(`/api/v1/ads/${id}/favorite`);
+      const res = await axiosClient.post('/v1/user/favorites/toggle', { adId: id, userId });
+      return res;
     } catch (err) {
       localAds = localAds.map((ad) =>
         ad.id === id ? { ...ad, isFavorite: !ad.isFavorite } : ad

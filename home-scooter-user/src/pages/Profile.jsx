@@ -1,145 +1,207 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { Card } from '../components/common/Card';
-import { Badge } from '../components/common/Badge';
-import { Button } from '../components/common/Button';
+import { favoritesApi } from '../api/favoritesApi';
+import { LocationSelectorModal } from '../components/marketplace/LocationSelectorModal';
 import {
-  User,
-  Phone,
-  Mail,
-  ShieldCheck,
-  Crown,
-  FileText,
+  ArrowLeft,
   Heart,
-  Sparkles,
+  Award,
+  MapPin,
+  Bell,
+  Shield,
   LogOut,
   ChevronRight,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const Profile = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, selectedLocation, isAuthenticated, logout } = useAuth();
+  const [isLocationOpen, setIsLocationOpen] = useState(false);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="text-center py-16 space-y-4 max-w-md mx-auto">
-        <h2 className="text-2xl font-black text-slate-900">Sign in to View Profile</h2>
-        <p className="text-xs text-slate-500">Log in to manage your posted ads, saved favorites, and subscription membership</p>
-        <Button onClick={() => navigate('/login')} size="lg" className="w-full">
-          Sign In Now
-        </Button>
-      </div>
-    );
-  }
+  const { data: favsResult } = useQuery({
+    queryKey: ['myFavorites'],
+    queryFn: () => favoritesApi.getFavorites(user?.id || user?.userId || 'USR-3894'),
+  });
+
+  const favoritesCount = favsResult?.data?.length || 0;
+
+  const initialLetter = user?.name ? user.name.charAt(0).toUpperCase() : 'G';
+  const userName = user?.name || 'Guest User';
+  const userPhone = user?.phone || '+91 98765 43210';
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto pb-12">
-      {/* Profile Header Card */}
-      <Card className="p-6 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white rounded-3xl border-blue-900 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-          <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'}
-            alt={user?.name}
-            className="w-20 h-20 rounded-full object-cover ring-4 ring-blue-500/40 shadow-lg"
-          />
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h1 className="text-2xl font-black">{user?.name}</h1>
-              <Badge variant="success">
-                <ShieldCheck className="w-3 h-3 mr-0.5" /> Verified
-              </Badge>
-              {user?.isSubscribed && (
-                <Badge variant="warning">
-                  <Crown className="w-3 h-3 mr-0.5 fill-amber-500" /> SUBSCRIBER
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-slate-300 flex items-center justify-center sm:justify-start gap-2 pt-1 font-medium">
-              <Phone className="w-3.5 h-3.5 text-blue-400" /> {user?.phone}
-              <span>•</span>
-              <Mail className="w-3.5 h-3.5 text-blue-400" /> {user?.email}
-            </p>
+    <div className="space-y-4 pb-20 max-w-lg mx-auto px-2 sm:px-0 font-serif">
+      {/* Header Bar */}
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 text-slate-800 hover:text-slate-900 transition-colors cursor-pointer"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          Profile & Account
+        </h1>
+      </div>
+
+      {/* User Info Card */}
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-[#eef2ff] border border-blue-100 text-blue-700 font-bold text-2xl flex items-center justify-center shrink-0 shadow-xs select-none">
+          {initialLetter}
+        </div>
+        <div className="space-y-0.5 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h2 className="font-bold text-slate-900 text-xl truncate">{userName}</h2>
+            <CheckCircle2 className="w-5 h-5 text-blue-600 fill-blue-600 text-white shrink-0" />
+          </div>
+          <p className="text-slate-500 text-xs font-light tracking-wide">{userPhone}</p>
+        </div>
+      </div>
+
+      {/* Subscription Model Banner (Vibrant Blue Card) */}
+      <div className="bg-blue-600 rounded-3xl p-5 text-white flex items-center justify-between shadow-md shadow-blue-500/20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-300 flex items-center justify-center shrink-0">
+            <Award className="w-6 h-6 fill-amber-400 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-base">Subscription Model</h3>
+            <p className="text-blue-100 text-xs font-light">Become a Subscriber for Just ₹100/-</p>
           </div>
         </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800 text-center">
-          <div className="p-3 bg-white/10 rounded-2xl">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Posted Ads</span>
-            <span className="text-xl font-black text-white">{user?.postedAdsCount || 4}</span>
-          </div>
-          <div className="p-3 bg-white/10 rounded-2xl">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Favorites</span>
-            <span className="text-xl font-black text-white">{user?.favoriteAdsIds?.length || 2}</span>
-          </div>
-        </div>
-      </Card>
-
-      {/* Menu Options */}
-      <Card className="p-2 divide-y divide-slate-100 rounded-2xl">
-        <button
-          onClick={() => navigate('/my-ads')}
-          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><FileText className="w-5 h-5" /></div>
-            <div className="text-left">
-              <p className="font-bold text-slate-900 text-sm">My Posted Advertisements</p>
-              <p className="text-xs text-slate-500">Manage listings, view status & leads</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400" />
-        </button>
-
-        <button
-          onClick={() => navigate('/favorites')}
-          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-xl"><Heart className="w-5 h-5" /></div>
-            <div className="text-left">
-              <p className="font-bold text-slate-900 text-sm">Saved Favorites</p>
-              <p className="text-xs text-slate-500">Your bookmarked plots, flats & scooters</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400" />
-        </button>
 
         <button
           onClick={() => navigate('/subscription')}
-          className="w-full p-4 flex items-center justify-between hover:bg-emerald-50/50 rounded-xl transition-colors cursor-pointer"
+          className="bg-white hover:bg-slate-50 text-blue-700 font-bold text-xs px-4 py-2 rounded-xl transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Crown className="w-5 h-5" /></div>
-            <div className="text-left">
-              <p className="font-bold text-emerald-900 text-sm">₹100 Subscription Membership</p>
-              <p className="text-xs text-emerald-700">10 Days ad-free access & exclusive facilities</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-emerald-600" />
+          Subscribe
         </button>
-
-        <button
-          onClick={() => navigate('/visitor-win')}
-          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><Sparkles className="w-5 h-5" /></div>
-            <div className="text-left">
-              <p className="font-bold text-slate-900 text-sm">Visitor Win Event</p>
-              <p className="text-xs text-slate-500">Register for promotional contest opportunities</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-slate-400" />
-        </button>
-      </Card>
-
-      <div className="pt-2">
-        <Button variant="danger" size="lg" className="w-full font-bold" onClick={logout} icon={LogOut}>
-          Logout Account
-        </Button>
       </div>
+
+      {/* Menu Cards List */}
+      <div className="space-y-3 pt-1">
+        {/* Menu Item 1: My Favorites */}
+        <div
+          onClick={() => navigate('/favorites')}
+          className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+              <Heart className="w-5 h-5 fill-red-500 text-red-500" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                My Favorites
+              </h4>
+              <p className="text-slate-400 text-xs font-light">
+                {favoritesCount} {favoritesCount === 1 ? 'saved listing' : 'saved listings'}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </div>
+
+        {/* Menu Item 2: Subscription Model */}
+        <div
+          onClick={() => navigate('/subscription')}
+          className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                Subscription Model
+              </h4>
+              <p className="text-slate-400 text-xs font-light">
+                Exclusive benefits & ad-free access (₹100)
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </div>
+
+        {/* Menu Item 3: My Selected Location */}
+        <div
+          onClick={() => setIsLocationOpen(true)}
+          className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                My Selected Location
+              </h4>
+              <p className="text-slate-400 text-xs font-light">
+                {selectedLocation || 'Bangalore, Karnataka'}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </div>
+
+        {/* Menu Item 4: Call Back Requests Received */}
+        <div
+          onClick={() => navigate('/notifications')}
+          className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                Call Back Requests Received
+              </h4>
+              <p className="text-slate-400 text-xs font-light">1 notifications</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </div>
+
+        {/* Menu Item 5: Privacy & Safety Guidelines */}
+        <div
+          onClick={() => navigate('/privacy-safety')}
+          className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Shield className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
+                Privacy & Safety Guidelines
+              </h4>
+              <p className="text-slate-400 text-xs font-light">Verified listing rules</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </div>
+      </div>
+
+      {/* Log Out Button */}
+      <div className="pt-3">
+        <button
+          onClick={logout}
+          className="w-full bg-[#fdf2f2] border border-red-200/80 text-red-600 font-bold text-base py-4 rounded-3xl flex items-center justify-center gap-2 hover:bg-red-100/60 active:scale-[0.99] transition-all cursor-pointer shadow-xs"
+        >
+          <LogOut className="w-5 h-5 text-red-600" />
+          <span>Log Out</span>
+        </button>
+      </div>
+
+      {/* Location Selector Modal */}
+      <LocationSelectorModal
+        isOpen={isLocationOpen}
+        onClose={() => setIsLocationOpen(false)}
+      />
     </div>
   );
 };

@@ -5,7 +5,7 @@ export const categoryApi = {
   getCategories: async () => {
     try {
       const res = await axiosClient.get('/v1/user/categories');
-      return res.data;
+      return res;
     } catch (err) {
       return {
         success: true,
