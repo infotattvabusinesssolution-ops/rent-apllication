@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 import { LocationSelectorModal } from '../components/marketplace/LocationSelectorModal';
 import { FilterDrawer } from '../components/marketplace/FilterDrawer';
+import { LuckyDrawBox } from '../components/LuckyDraw/LuckyDrawBox';
 import { formatCurrency } from '../utils/formatters';
 import {
   MapPin,
@@ -169,6 +170,9 @@ export const Home = () => {
           );
         })}
       </div>
+
+      {/* Official Lucky Draw Box Widget */}
+      <LuckyDrawBox />
 
       {/* Featured Ads Section */}
       <div className="space-y-3">

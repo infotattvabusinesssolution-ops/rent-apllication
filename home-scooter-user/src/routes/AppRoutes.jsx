@@ -31,6 +31,12 @@ import { VisitorWin } from '../pages/VisitorWin';
 import { Filters } from '../pages/Filters';
 import { NotFound } from '../pages/NotFound';
 
+import { LuckyDrawList } from '../pages/LuckyDraw/LuckyDrawList';
+import { LuckyDrawDetail } from '../pages/LuckyDraw/LuckyDrawDetail';
+import { MyLuckyDraws } from '../pages/LuckyDraw/MyLuckyDraws';
+import { PaymentSuccess } from '../pages/LuckyDraw/PaymentSuccess';
+import { PaymentFailed } from '../pages/LuckyDraw/PaymentFailed';
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -42,6 +48,14 @@ export const AppRoutes = () => {
         {/* Protected Routes (Redirects to /login if unauthenticated) */}
         <Route element={<ProtectedRoute />}>
           <Route index element={<Home />} />
+          
+          {/* Lucky Draw Routes */}
+          <Route path="lucky-draw" element={<LuckyDrawList />} />
+          <Route path="lucky-draw/:id" element={<LuckyDrawDetail />} />
+          <Route path="my-lucky-draws" element={<MyLuckyDraws />} />
+          <Route path="lucky-draw/payment/success" element={<PaymentSuccess />} />
+          <Route path="lucky-draw/payment/failed" element={<PaymentFailed />} />
+
           <Route path="categories" element={<Categories />} />
           <Route path="categories/layout-sites" element={<LayoutSites />} />
           <Route path="categories/properties" element={<Properties />} />

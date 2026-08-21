@@ -60,16 +60,23 @@ app.use('/api/v1/admin/leads', require('./routes/api/v1/admin/leads.routes'));
 app.use('/api/v1/admin/reports', require('./routes/api/v1/admin/reports.routes'));
 app.use('/api/v1/admin/visitor-win', require('./routes/api/v1/admin/visitorWin.routes'));
 app.use('/api/v1/admin/settings', require('./routes/api/v1/admin/settings.routes'));
+app.use('/api/v1/admin/lucky-draws', require('./routes/api/v1/admin/luckyDrawAdmin.routes'));
 
 // User Marketplace REST Routes Mount
 app.use('/api/v1/user/auth', require('./routes/api/v1/user/userAuth.routes'));
 app.use('/api/v1/user/categories', require('./routes/api/v1/admin/categories.routes'));
 app.use('/api/v1/user/chats', require('./routes/api/v1/user/chat.routes'));
 app.use('/api/v1/user/favorites', require('./routes/api/v1/user/favorite.routes'));
+app.use('/api/v1/user/lucky-draws', require('./routes/api/v1/user/luckyDrawUser.routes'));
 app.use('/api/v1/user', require('./routes/api/v1/user/user.routes'));
 
-// Real-Time Notification Routes Mount
+// Real-Time Notification & Webhook Routes Mount
+app.use('/api/v1/webhooks', require('./routes/api/v1/webhook.routes'));
 app.use('/api/v1', require('./routes/api/v1/notification.routes'));
+
+// Initialize Background Lucky Draw Scheduler
+const { initLuckyDrawScheduler } = require('./services/luckyDrawScheduler');
+initLuckyDrawScheduler();
 
 
 // Error Middlewares

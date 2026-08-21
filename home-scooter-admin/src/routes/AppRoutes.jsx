@@ -20,6 +20,14 @@ import { CategoryManagement } from '../pages/CategoryManagement';
 import { Analytics } from '../pages/Analytics';
 import { Settings } from '../pages/Settings';
 
+import { LuckyDrawDashboard } from '../pages/LuckyDraw/LuckyDrawDashboard';
+import { LuckyDrawList } from '../pages/LuckyDraw/LuckyDrawList';
+import { LuckyDrawCreate } from '../pages/LuckyDraw/LuckyDrawCreate';
+import { LuckyDrawDetail } from '../pages/LuckyDraw/LuckyDrawDetail';
+import { LuckyDrawEntries } from '../pages/LuckyDraw/LuckyDrawEntries';
+import { LuckyDrawPayments } from '../pages/LuckyDraw/LuckyDrawPayments';
+import { LuckyDrawWinners } from '../pages/LuckyDraw/LuckyDrawWinners';
+import { LuckyDrawAuditLogs } from '../pages/LuckyDraw/LuckyDrawAuditLogs';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -44,6 +52,16 @@ export const AppRoutes = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         
+        {/* Lucky Draw Routes */}
+        <Route path="lucky-draw" element={<LuckyDrawDashboard />} />
+        <Route path="lucky-draw/list" element={<LuckyDrawList />} />
+        <Route path="lucky-draw/create" element={<LuckyDrawCreate />} />
+        <Route path="lucky-draw/entries" element={<LuckyDrawEntries />} />
+        <Route path="lucky-draw/payments" element={<LuckyDrawPayments />} />
+        <Route path="lucky-draw/winners" element={<LuckyDrawWinners />} />
+        <Route path="lucky-draw/audit-logs" element={<LuckyDrawAuditLogs />} />
+        <Route path="lucky-draw/:id" element={<LuckyDrawDetail />} />
+
         <Route path="ads" element={<AdsList />} />
         <Route path="ads/pending" element={<PendingAds />} />
         <Route path="ads/:id" element={<AdDetail />} />

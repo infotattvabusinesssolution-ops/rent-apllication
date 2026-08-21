@@ -22,10 +22,21 @@ import {
   Building2,
   Bike,
   FolderTree,
+  Gift,
+  Ticket,
+  Receipt,
+  Trophy,
+  History,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/lucky-draw', label: 'Lucky Draw Box', icon: Gift, badgeColor: 'bg-purple-600' },
+  { path: '/lucky-draw/create', label: '+ Create Lucky Draw', icon: Gift },
+  { path: '/lucky-draw/entries', label: 'Draw Entries', icon: Ticket },
+  { path: '/lucky-draw/payments', label: 'Draw Payments', icon: Receipt },
+  { path: '/lucky-draw/winners', label: 'Draw Winners', icon: Trophy, badgeColor: 'bg-amber-500' },
+  { path: '/lucky-draw/audit-logs', label: 'Audit Logs', icon: History },
   { path: '/ads', label: 'All Ads', icon: Layers, badgeColor: 'bg-blue-600' },
   { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badgeColor: 'bg-amber-500' },
   { path: '/categories', label: 'Categories', icon: FolderTree },

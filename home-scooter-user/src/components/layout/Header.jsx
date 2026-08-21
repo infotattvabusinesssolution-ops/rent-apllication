@@ -26,13 +26,13 @@ export const Header = () => {
 
   const navLinks = [
     { label: 'Home', path: '/' },
+    { label: '🎁 Lucky Draw', path: '/lucky-draw', highlight: true },
     { label: 'Sell', path: '/sell' },
     { label: 'Post Ad', path: '/post-ad' },
     { label: 'Categories', path: '/categories' },
     { label: 'Near Me', path: '/near-me' },
     { label: 'New Ads', path: '/new-ads' },
-    { label: 'Top Viewed', path: '/top-viewed' },
-    { label: 'Visitor Win', path: '/visitor-win', highlight: true },
+    { label: 'Visitor Win', path: '/visitor-win' },
   ];
 
 
