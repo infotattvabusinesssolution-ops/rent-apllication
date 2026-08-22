@@ -25,6 +25,10 @@ export const adsApi = {
     return await axiosClient.patch(`/api/v1/admin/ads/${id}/badges`, badges);
   },
 
+  toggleLuckyDrawStatus: async (id, luckyDrawStatus) => {
+    return await axiosClient.patch(`/api/v1/admin/ads/${id}/lucky-draw`, { luckyDrawStatus });
+  },
+
   unpublishAd: async (id) => {
     return await axiosClient.patch(`/api/v1/admin/ads/${id}/unpublish`);
   },

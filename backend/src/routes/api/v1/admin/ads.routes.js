@@ -7,6 +7,7 @@ const {
   approveAd,
   rejectAd,
   updateBadges,
+  updateLuckyDrawStatus,
   unpublishAd,
   deleteAd,
 } = require('../../../../controllers/adsController');
@@ -18,6 +19,7 @@ router.get('/:id', protectAdmin, getAdById);
 router.patch('/:id/approve', protectAdmin, approveAd);
 router.patch('/:id/reject', protectAdmin, rejectAd);
 router.patch('/:id/badges', protectAdmin, updateBadges);
+router.patch('/:id/lucky-draw', protectAdmin, updateLuckyDrawStatus);
 router.patch('/:id/unpublish', protectAdmin, unpublishAd);
 router.delete('/:id', protectAdmin, deleteAd);
 

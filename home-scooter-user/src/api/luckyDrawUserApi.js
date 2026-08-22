@@ -21,7 +21,7 @@ export const luckyDrawUserApi = {
     return await axiosClient.get('/v1/user/lucky-draws/user/my-entries');
   },
 
-  getMyWinners: async () => {
-    return await axiosClient.get('/v1/user/lucky-draws/my-winners');
+  submitEnquiry: async (enquiryData) => {
+    return await axiosClient.post('/v1/user/lucky-draws/enquiries', enquiryData);
   },
 };

@@ -7,6 +7,7 @@ import { chatApi } from '../api/chatApi';
 import { favoritesApi } from '../api/favoritesApi';
 import { ReportAdModal } from '../components/marketplace/ReportAdModal';
 import { CustomerVerifiedSlipModal } from '../components/marketplace/CustomerVerifiedSlipModal';
+import { LuckyDrawInterestModal } from '../components/LuckyDraw/LuckyDrawInterestModal';
 import { formatCurrency, formatCompactViews, timeAgo } from '../utils/formatters';
 import { toast } from 'sonner';
 import {
@@ -22,6 +23,9 @@ import {
   Flag,
   ShieldCheck,
   MessageSquare,
+  Gift,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 
 export const AdDetail = () => {
@@ -30,6 +34,7 @@ export const AdDetail = () => {
   const queryClient = useQueryClient();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isCvsOpen, setIsCvsOpen] = useState(false);
+  const [isLuckyDrawModalOpen, setIsLuckyDrawModalOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
@@ -200,6 +205,38 @@ export const AdDetail = () => {
         </div>
       </div>
 
+      {/* Lucky Draw Banner (Only displayed if marked APPLY by Admin) */}
+      {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
+        <div
+          onClick={() => setIsLuckyDrawModalOpen(true)}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 p-4 text-white shadow-lg cursor-pointer transform transition-all hover:scale-[1.01] active:scale-[0.99] border border-amber-300/40"
+        >
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-amber-300 shrink-0 shadow-inner">
+                <Gift className="w-6 h-6 text-amber-300 animate-bounce" />
+              </div>
+              <div className="min-w-0">
+                <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mb-1">
+                  <Sparkles className="w-3 h-3 fill-slate-950" /> Lucky Draw Active
+                </span>
+                <h3 className="font-serif font-black text-sm sm:text-base leading-tight text-white truncate">
+                  ENTER TO WIN PRIZES
+                </h3>
+                <p className="text-[10px] sm:text-xs text-amber-100 font-serif font-light truncate">
+                  Tap to express interest & send details to Admin WhatsApp!
+                </p>
+              </div>
+            </div>
+
+            <button className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-serif font-black text-xs px-3 py-2 rounded-xl shrink-0 flex items-center gap-1 shadow-md">
+              <span>I'm Interested</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Location Box */}
       <div className="bg-[#f8fafc] border border-slate-200/60 rounded-2xl p-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -344,7 +381,13 @@ export const AdDetail = () => {
         adId={ad.id}
         adTitle={ad.title}
       />
-    </div>
 
+      {/* Lucky Draw Interest Modal */}
+      <LuckyDrawInterestModal
+        isOpen={isLuckyDrawModalOpen}
+        onClose={() => setIsLuckyDrawModalOpen(false)}
+        ad={ad}
+      />
+    </div>
   );
 };

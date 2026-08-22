@@ -35,6 +35,7 @@ const {
 } = require('../../../../controllers/luckyDrawWinnerController');
 
 const { getAuditLogs } = require('../../../../controllers/luckyDrawAuditController');
+const { getLuckyDrawEnquiries, updateEnquiryStatus } = require('../../../../controllers/luckyDrawEnquiryController');
 
 // Apply admin protection middleware to all admin lucky draw routes
 router.use(protectAdmin);
@@ -45,6 +46,10 @@ router.get('/audit-logs', getAuditLogs);
 router.get('/winners', getWinners);
 router.get('/entries', getDrawEntries);
 router.get('/payments', getDrawPayments);
+
+// Lucky Draw Visitor Enquiries
+router.get('/enquiries', getLuckyDrawEnquiries);
+router.patch('/enquiries/:id', updateEnquiryStatus);
 
 // Main Draw CRUD
 router.get('/', getLuckyDraws);

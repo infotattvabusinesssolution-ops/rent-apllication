@@ -38,6 +38,7 @@ const NAV_ITEMS = [
   { path: '/lucky-draw/winners', label: 'Draw Winners', icon: Trophy, badgeColor: 'bg-amber-500' },
   { path: '/lucky-draw/audit-logs', label: 'Audit Logs', icon: History },
   { path: '/ads', label: 'All Ads', icon: Layers, badgeColor: 'bg-blue-600' },
+  { path: '/ads/lucky-draw', label: 'Ads → Lucky Draw', icon: Gift, badgeColor: 'bg-rose-600' },
   { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badgeColor: 'bg-amber-500' },
   { path: '/categories', label: 'Categories', icon: FolderTree },
   { path: '/banners', label: 'Banner Ads', icon: Image },

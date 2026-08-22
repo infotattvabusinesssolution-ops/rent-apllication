@@ -23,7 +23,10 @@ const {
   getWinners,
 } = require('../../../../controllers/luckyDrawWinnerController');
 
-// Public endpoints (Browse catalog, detail, prizes, result)
+const { submitLuckyDrawEnquiry } = require('../../../../controllers/luckyDrawEnquiryController');
+
+// Public endpoints (Browse catalog, detail, prizes, result, visitor enquiry submission)
+router.post('/enquiries', submitLuckyDrawEnquiry);
 router.get('/', getLuckyDraws);
 router.get('/my-winners', getWinners);
 router.get('/:id', getLuckyDrawById);

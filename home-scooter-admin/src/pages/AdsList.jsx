@@ -25,6 +25,7 @@ import {
   Trash2,
   Layers,
   Sparkles,
+  Gift,
 } from 'lucide-react';
 import { Dropdown } from '../components/ui/Dropdown';
 
@@ -86,6 +87,14 @@ export const AdsList = () => {
       toast.success('Badges updated');
       queryClient.invalidateQueries(['ads']);
       queryClient.invalidateQueries(['adminDashboardStats']);
+    },
+  });
+
+  const luckyDrawMutation = useMutation({
+    mutationFn: ({ id, luckyDrawStatus }) => adsApi.toggleLuckyDrawStatus(id, luckyDrawStatus),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Lucky Draw setting updated');
+      queryClient.invalidateQueries(['ads']);
     },
   });
 
@@ -207,7 +216,7 @@ export const AdsList = () => {
                     <th className="py-3 px-4">Price</th>
                     <th className="py-3 px-4">Seller Info</th>
                     <th className="py-3 px-4">Views</th>
-                    <th className="py-3 px-4">Submitted</th>
+                    <th className="py-3 px-4">Lucky Draw</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
@@ -215,6 +224,7 @@ export const AdsList = () => {
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {adsList.map((ad) => {
                     const statusBadge = AD_STATUS_BADGES[ad.status] || AD_STATUS_BADGES.PENDING;
+                    const isLuckyApply = ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible;
                     return (
                       <tr key={ad.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3 px-4">
@@ -266,7 +276,24 @@ export const AdsList = () => {
                           <p className="text-[11px] text-slate-500">{ad.posterPhone}</p>
                         </td>
                         <td className="py-3 px-4 text-slate-600">{formatCompactViews(ad.viewsCount)}</td>
-                        <td className="py-3 px-4 text-slate-500">{formatDate(ad.postedAt)}</td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() =>
+                              luckyDrawMutation.mutate({
+                                id: ad.id,
+                                luckyDrawStatus: isLuckyApply ? 'NOT_APPLY' : 'APPLY',
+                              })
+                            }
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                              isLuckyApply
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 shadow-xs'
+                                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                            }`}
+                            title="Click to toggle Lucky Draw setting for this Ad"
+                          >
+                            <span>{isLuckyApply ? '👉 Apply' : '👉 Not Apply'}</span>
+                          </button>
+                        </td>
                         <td className="py-3 px-4">
                           <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
                         </td>
@@ -310,6 +337,15 @@ export const AdsList = () => {
                                   label: 'View Full Detail',
                                   icon: Eye,
                                   onClick: () => navigate(`/ads/${ad.id}`),
+                                },
+                                {
+                                  label: isLuckyApply ? 'Lucky Draw: Set NOT APPLY' : 'Lucky Draw: Set APPLY',
+                                  icon: Gift,
+                                  onClick: () =>
+                                    luckyDrawMutation.mutate({
+                                      id: ad.id,
+                                      luckyDrawStatus: isLuckyApply ? 'NOT_APPLY' : 'APPLY',
+                                    }),
                                 },
                                 {
                                   label: ad.isFeatured ? 'Remove Featured' : 'Mark as Featured',

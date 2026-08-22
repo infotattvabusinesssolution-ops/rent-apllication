@@ -43,6 +43,15 @@ const advertisementSchema = new mongoose.Schema(
     isFeatured: { type: Boolean, default: false },
     promoTag: { type: String, default: null },
 
+    // Lucky Draw Admin Setting (APPLY / NOT_APPLY)
+    luckyDrawStatus: {
+      type: String,
+      enum: ['APPLY', 'NOT_APPLY'],
+      default: 'NOT_APPLY',
+      index: true,
+    },
+    isLuckyDrawEligible: { type: Boolean, default: false },
+
     // Category Specific Metadata
     dimensions: { type: String, default: null },
     plotNumber: { type: String, default: null },

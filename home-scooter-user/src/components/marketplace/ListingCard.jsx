@@ -64,6 +64,11 @@ export const ListingCard = ({ ad, onFavoriteToggle }) => {
                 <Flame className="w-2.5 h-2.5 mr-0.5 text-amber-600 fill-amber-500" /> High Demand
               </Badge>
             )}
+            {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
+              <Badge variant="danger" size="sm" className="shadow-md animate-pulse">
+                🎁 Lucky Draw
+              </Badge>
+            )}
           </div>
 
           {/* Favorite Heart Button */}

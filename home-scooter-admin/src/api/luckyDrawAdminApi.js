@@ -91,4 +91,13 @@ export const luckyDrawAdminApi = {
   getAuditLogs: async (params = {}) => {
     return await axiosClient.get('/api/v1/admin/lucky-draws/audit-logs', { params });
   },
+
+  // Visitor Enquiries
+  getEnquiries: async (params = {}) => {
+    return await axiosClient.get('/api/v1/admin/lucky-draws/enquiries', { params });
+  },
+
+  updateEnquiryStatus: async (id, data) => {
+    return await axiosClient.patch(`/api/v1/admin/lucky-draws/enquiries/${id}`, data);
+  },
 };

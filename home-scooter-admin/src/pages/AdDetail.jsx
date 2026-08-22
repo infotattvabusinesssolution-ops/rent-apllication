@@ -29,6 +29,7 @@ import {
   Zap,
   Tag,
   ArrowLeft,
+  Gift,
 } from 'lucide-react';
 
 export const AdDetail = () => {
@@ -70,6 +71,15 @@ export const AdDetail = () => {
     onSuccess: () => {
       toast.success('Badges updated');
       queryClient.invalidateQueries(['adDetail', id]);
+    },
+  });
+
+  const luckyDrawMutation = useMutation({
+    mutationFn: ({ luckyDrawStatus }) => adsApi.toggleLuckyDrawStatus(id, luckyDrawStatus),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Lucky Draw setting updated');
+      queryClient.invalidateQueries(['adDetail', id]);
+      queryClient.invalidateQueries(['ads']);
     },
   });
 
@@ -354,7 +364,29 @@ export const AdDetail = () => {
 
               {/* Promotional Badges Control */}
               <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Promotional Badges</span>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Promotional Badges & Settings</span>
+                
+                {/* Lucky Draw Setting (Apply / Not Apply) */}
+                <div className="flex items-center justify-between p-2.5 bg-red-50/60 rounded-xl border border-red-200">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Gift className="w-4 h-4 text-red-600" /> Lucky Draw Setting
+                  </span>
+                  <button
+                    onClick={() =>
+                      luckyDrawMutation.mutate({
+                        luckyDrawStatus: (ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) ? 'NOT_APPLY' : 'APPLY',
+                      })
+                    }
+                    className={`px-3 py-1 rounded-full text-xs font-black cursor-pointer transition-all border ${
+                      (ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible)
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                        : 'bg-slate-200 text-slate-700 border-slate-300'
+                    }`}
+                  >
+                    {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) ? '👉 APPLY' : '👉 NOT APPLY'}
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                     <Star className="w-4 h-4 text-purple-600" /> Featured Badge

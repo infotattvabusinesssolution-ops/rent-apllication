@@ -191,12 +191,12 @@ const rejectAd = async (req, res) => {
   }
 };
 
-// @desc    Update ad badges (isFeatured, isHighDemand)
+// @desc    Update ad badges (isFeatured, isHighDemand, luckyDrawStatus)
 // @route   PATCH /api/v1/admin/ads/:id/badges
 // @access  Private (Admin)
 const updateBadges = async (req, res) => {
   try {
-    const { isFeatured, isHighDemand } = req.body;
+    const { isFeatured, isHighDemand, luckyDrawStatus, isLuckyDrawEligible } = req.body;
     const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
 
     if (!ad) {
@@ -205,9 +205,54 @@ const updateBadges = async (req, res) => {
 
     if (isFeatured !== undefined) ad.isFeatured = Boolean(isFeatured);
     if (isHighDemand !== undefined) ad.isHighDemand = Boolean(isHighDemand);
+    if (luckyDrawStatus !== undefined) {
+      ad.luckyDrawStatus = luckyDrawStatus === 'APPLY' ? 'APPLY' : 'NOT_APPLY';
+      ad.isLuckyDrawEligible = ad.luckyDrawStatus === 'APPLY';
+    } else if (isLuckyDrawEligible !== undefined) {
+      ad.isLuckyDrawEligible = Boolean(isLuckyDrawEligible);
+      ad.luckyDrawStatus = ad.isLuckyDrawEligible ? 'APPLY' : 'NOT_APPLY';
+    }
     await ad.save();
 
-    return res.json({ success: true, message: 'Badges updated successfully' });
+    return res.json({ success: true, message: 'Badges updated successfully', data: ad });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Toggle Lucky Draw setting (APPLY / NOT_APPLY) for an ad
+// @route   PATCH /api/v1/admin/ads/:id/lucky-draw
+// @access  Private (Admin)
+const updateLuckyDrawStatus = async (req, res) => {
+  try {
+    const { luckyDrawStatus, isLuckyDrawEligible } = req.body;
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
+
+    if (!ad) {
+      return res.status(404).json({ success: false, message: 'Advertisement not found' });
+    }
+
+    if (luckyDrawStatus !== undefined) {
+      ad.luckyDrawStatus = luckyDrawStatus === 'APPLY' ? 'APPLY' : 'NOT_APPLY';
+      ad.isLuckyDrawEligible = ad.luckyDrawStatus === 'APPLY';
+    } else if (isLuckyDrawEligible !== undefined) {
+      ad.isLuckyDrawEligible = Boolean(isLuckyDrawEligible);
+      ad.luckyDrawStatus = ad.isLuckyDrawEligible ? 'APPLY' : 'NOT_APPLY';
+    } else {
+      // Toggle logic
+      ad.luckyDrawStatus = ad.luckyDrawStatus === 'APPLY' ? 'NOT_APPLY' : 'APPLY';
+      ad.isLuckyDrawEligible = ad.luckyDrawStatus === 'APPLY';
+    }
+
+    await ad.save();
+
+    return res.json({
+      success: true,
+      message: `Lucky Draw set to ${ad.luckyDrawStatus} for this listing`,
+      luckyDrawStatus: ad.luckyDrawStatus,
+      isLuckyDrawEligible: ad.isLuckyDrawEligible,
+      ad,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -255,6 +300,7 @@ module.exports = {
   approveAd,
   rejectAd,
   updateBadges,
+  updateLuckyDrawStatus,
   unpublishAd,
   deleteAd,
 };
