@@ -33,9 +33,7 @@ export const PostAd = () => {
   const [description, setDescription] = useState('');
 
   // Photos State
-  const [images, setImages] = useState([
-    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
-  ]);
+  const [images, setImages] = useState([]);
 
   const postMutation = useMutation({
     mutationFn: adsApi.postAd,
@@ -51,14 +49,19 @@ export const PostAd = () => {
   const handleImageFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
-      files.forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImages((prev) => [...prev, reader.result]);
-        };
-        reader.readAsDataURL(file);
+      const readPromises = files.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          })
+      );
+
+      Promise.all(readPromises).then((base64Images) => {
+        setImages((prev) => [...prev, ...base64Images]);
+        toast.success(`${files.length} photo(s) added`);
       });
-      toast.success(`${files.length} photo(s) added`);
     }
   };
 
