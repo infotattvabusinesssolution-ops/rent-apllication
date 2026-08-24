@@ -378,20 +378,62 @@ export const PremiumContentList = () => {
               </div>
 
               {formData.contentType !== 'TEXT' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Upload {formData.contentType === 'VIDEO' ? 'Video File' : 'Banner Image'}
-                  </label>
-                  <div className="flex items-center gap-3">
+                <div className="space-y-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Upload {formData.contentType === 'VIDEO' ? 'Video File' : 'Banner Image'}
+                    </label>
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      ☁️ Cloudinary CDN Enabled
+                    </span>
+                  </div>
+
+                  <div>
                     <input
                       type="file"
-                      accept={formData.contentType === 'VIDEO' ? 'video/*' : 'image/*'}
+                      accept={formData.contentType === 'VIDEO' ? 'video/mp4,video/webm,video/quicktime,video/x-msvideo,video/*' : 'image/*'}
                       onChange={(e) => setSelectedFile(e.target.files[0])}
-                      className="text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                      className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {formData.contentType === 'VIDEO'
+                        ? 'Supported video formats: MP4, WEBM, MOV, AVI (Max 50MB). Automatically uploaded to Cloudinary Video CDN.'
+                        : 'Supported image formats: JPG, PNG, WEBP, GIF. Automatically uploaded to Cloudinary Image CDN.'}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Or Direct Cloudinary / Stream URL
+                    </label>
+                    <input
+                      type="url"
+                      placeholder={formData.contentType === 'VIDEO' ? 'https://res.cloudinary.com/.../video.mp4' : 'https://res.cloudinary.com/.../image.jpg'}
+                      value={formData.mediaUrl}
+                      onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
+                      className="w-full p-2 text-xs border border-slate-200 rounded-lg bg-white focus:border-amber-500"
                     />
                   </div>
-                  {formData.mediaUrl && !selectedFile && (
-                    <p className="text-[11px] text-emerald-600 mt-1">Current File: {formData.mediaUrl}</p>
+
+                  {/* Video / Banner Preview */}
+                  {formData.contentType === 'VIDEO' && formData.mediaUrl && (
+                    <div className="mt-2 rounded-lg overflow-hidden border border-slate-300 bg-black max-h-48 flex justify-center">
+                      <video
+                        src={formData.mediaUrl}
+                        controls
+                        className="max-h-48 w-full object-contain"
+                      />
+                    </div>
+                  )}
+
+                  {formData.contentType === 'BANNER' && formData.mediaUrl && (
+                    <div className="mt-2 rounded-lg overflow-hidden border border-slate-200 max-h-36 flex justify-center bg-slate-100">
+                      <img
+                        src={formData.mediaUrl}
+                        alt="Banner Preview"
+                        className="max-h-36 object-cover rounded-md"
+                      />
+                    </div>
                   )}
                 </div>
               )}
@@ -440,9 +482,20 @@ export const PremiumContentList = () => {
                   <button
                     type="submit"
                     disabled={saveMutation.isPending}
-                    className="px-5 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md"
+                    className="px-5 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md flex items-center gap-2"
                   >
-                    {saveMutation.isPending ? 'Saving...' : editingContent ? 'Update Content' : 'Create Content'}
+                    {saveMutation.isPending ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {selectedFile && formData.contentType === 'VIDEO'
+                          ? 'Uploading Video to Cloudinary CDN...'
+                          : 'Saving...'}
+                      </>
+                    ) : editingContent ? (
+                      'Update Content'
+                    ) : (
+                      'Create Content'
+                    )}
                   </button>
                 </div>
               </div>

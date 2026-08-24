@@ -5,6 +5,7 @@ const PremiumContent = require('../models/PremiumContent');
 const PremiumUpgradeRequest = require('../models/PremiumUpgradeRequest');
 const PremiumActivity = require('../models/PremiumActivity');
 const User = require('../models/User');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 // Helper to safely build Mongoose query without throwing CastError on invalid ObjectIds
 const buildIdQuery = (customIdKey, id) => {
@@ -160,7 +161,12 @@ const createPremiumContent = async (req, res) => {
 
     // Handle file upload if present
     if (req.file) {
-      mediaUrl = `/uploads/${req.file.filename}`;
+      const isVideo = contentType === 'VIDEO' || (req.file.originalname && /mp4|webm|mov|avi|mkv/.test(req.file.originalname));
+      mediaUrl = await uploadToCloudinary(
+        req.file,
+        'homescooter_premium',
+        isVideo ? 'video' : 'image'
+      );
     }
 
     if (contentType === 'BANNER' && !mediaUrl) {
@@ -239,7 +245,12 @@ const updatePremiumContent = async (req, res) => {
     if (thumbnailUrl !== undefined) item.thumbnailUrl = thumbnailUrl;
 
     if (req.file) {
-      item.mediaUrl = `/uploads/${req.file.filename}`;
+      const isVideo = item.contentType === 'VIDEO' || (req.file.originalname && /mp4|webm|mov|avi|mkv/.test(req.file.originalname));
+      item.mediaUrl = await uploadToCloudinary(
+        req.file,
+        'homescooter_premium',
+        isVideo ? 'video' : 'image'
+      );
     } else if (req.body.mediaUrl) {
       item.mediaUrl = req.body.mediaUrl;
     }

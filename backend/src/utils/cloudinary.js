@@ -4,29 +4,31 @@ const path = require('path');
 const fs = require('fs');
 
 /**
- * Uploads a file, buffer, or base64 string to Cloudinary CDN
- * Supports both Signed and Unsigned Cloudinary uploads
+ * Uploads a file, buffer, or base64 string directly to Cloudinary CDN without storing locally
+ * Supports both Image and Video uploads (auto-detects extension/resource_type)
  * @param {Object|String} fileInput - Multer file object, file path, or base64 data string
  * @param {String} folder - Target Cloudinary folder (default: 'homescooter_ads')
- * @returns {Promise<String>} - Secure Cloudinary CDN Image URL
+ * @param {String} customResourceType - Optional resource type ('image' or 'video')
+ * @returns {Promise<String>} - Secure Cloudinary CDN URL
  */
-const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
+const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customResourceType = null) => {
+  let tempFilePath = null;
   try {
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dwmokcagc';
     const apiKey = process.env.CLOUDINARY_API_KEY || '811782714826833';
     const apiSecret = process.env.CLOUDINARY_API_SECRET || 'YaT7sDQ5TSUNH276l35lPYXp9fI';
-    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'homescooter_ads';
 
     let fileBuffer = null;
-    let filename = `ad_photo_${Date.now()}.jpg`;
+    let filename = `media_${Date.now()}.jpg`;
 
-    if (typeof fileInput === 'string' && fileInput.startsWith('data:image')) {
+    if (typeof fileInput === 'string' && fileInput.startsWith('data:')) {
       const base64Data = fileInput.split(';base64,').pop();
       fileBuffer = Buffer.from(base64Data, 'base64');
     } else if (fileInput && fileInput.buffer) {
       fileBuffer = fileInput.buffer;
       filename = fileInput.originalname || filename;
     } else if (fileInput && fileInput.path && fs.existsSync(fileInput.path)) {
+      tempFilePath = fileInput.path;
       fileBuffer = fs.readFileSync(fileInput.path);
       filename = fileInput.filename || path.basename(fileInput.path);
     } else if (typeof fileInput === 'string' && (fileInput.startsWith('http://') || fileInput.startsWith('https://'))) {
@@ -37,19 +39,13 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
       return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
     }
 
-    // Save locally as primary/backup copy in uploads/ directory
-    let localUrl = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
-    try {
-      const uploadDir = path.join(__dirname, '../../uploads');
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-      fs.writeFileSync(path.join(uploadDir, filename), fileBuffer);
-      const port = process.env.PORT || 5027;
-      localUrl = `http://localhost:${port}/uploads/${filename}`;
-    } catch (e) {
-      console.error('Error saving image locally:', e.message);
-    }
+    // Determine resource type: 'video' or 'image'
+    const ext = path.extname(filename).toLowerCase();
+    const isVideo = customResourceType === 'video' || /mp4|webm|mov|avi|mkv/.test(ext);
+    const resourceType = isVideo ? 'video' : 'image';
+    const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
+    const uploadTimeoutMs = isVideo ? 120000 : 15000; // 120s for video, 15s for image
 
-    // Try Cloudinary upload, resolve with localUrl if slow or unconfigured
     const timestamp = Math.floor(Date.now() / 1000);
     const signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
     const signature = crypto.createHash('sha1').update(signatureStr).digest('hex');
@@ -66,7 +62,7 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
     postData += `Content-Disposition: form-data; name="folder"\r\n\r\n${folder}\r\n`;
     postData += `--${boundary}\r\n`;
     postData += `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n`;
-    postData += `Content-Type: image/jpeg\r\n\r\n`;
+    postData += `Content-Type: ${mimeType}\r\n\r\n`;
 
     const footer = `\r\n--${boundary}--\r\n`;
     const payloadBuffer = Buffer.concat([
@@ -75,15 +71,15 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
       Buffer.from(footer, 'utf8'),
     ]);
 
-    return new Promise((resolve) => {
-      // Set a short 3-second timeout for Cloudinary, otherwise fallback to localUrl immediately
+    const result = await new Promise((resolve) => {
       const timer = setTimeout(() => {
-        resolve(localUrl);
-      }, 3000);
+        console.warn(`Cloudinary ${resourceType} upload timed out after ${uploadTimeoutMs}ms.`);
+        resolve(null);
+      }, uploadTimeoutMs);
 
       const reqOptions = {
         hostname: 'api.cloudinary.com',
-        path: `/v1_1/${cloudName}/image/upload`,
+        path: `/v1_1/${cloudName}/${resourceType}/upload`,
         method: 'POST',
         headers: {
           'Content-Type': `multipart/form-data; boundary=${boundary}`,
@@ -99,30 +95,55 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads') => {
           try {
             const parsed = JSON.parse(body);
             if (parsed && parsed.secure_url) {
+              console.log(`Cloudinary ${resourceType} upload successful: ${parsed.secure_url}`);
               resolve(parsed.secure_url);
             } else {
-              resolve(localUrl);
+              console.warn('Cloudinary upload response:', parsed.error?.message || body);
+              resolve(null);
             }
           } catch (e) {
-            resolve(localUrl);
+            resolve(null);
           }
         });
       });
 
-      req.on('error', () => {
+      req.on('error', (err) => {
         clearTimeout(timer);
-        resolve(localUrl);
+        console.error(`Cloudinary request error: ${err.message}`);
+        resolve(null);
       });
 
       req.write(payloadBuffer);
       req.end();
     });
 
+    // Clean up temporary disk file if one was used
+    if (tempFilePath) {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (e) {}
+    }
+
+    return result || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
   } catch (err) {
+    if (tempFilePath) {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (e) {}
+    }
+    console.error('Error in uploadToCloudinary:', err.message);
     return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
   }
 };
 
+/**
+ * Uploads a video directly to Cloudinary CDN in 'homescooter_premium' folder
+ */
+const uploadVideoToCloudinary = async (fileInput, folder = 'homescooter_premium') => {
+  return uploadToCloudinary(fileInput, folder, 'video');
+};
+
 module.exports = {
   uploadToCloudinary,
+  uploadVideoToCloudinary,
 };

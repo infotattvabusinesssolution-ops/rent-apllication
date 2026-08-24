@@ -6,6 +6,7 @@ const PremiumContent = require('../models/PremiumContent');
 const PremiumUpgradeRequest = require('../models/PremiumUpgradeRequest');
 const PremiumActivity = require('../models/PremiumActivity');
 const User = require('../models/User');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_homescooter_2026';
 
@@ -278,7 +279,7 @@ const submitUpgradeRequest = async (req, res) => {
 
     let paymentScreenshot = '';
     if (req.file) {
-      paymentScreenshot = `/uploads/${req.file.filename}`;
+      paymentScreenshot = await uploadToCloudinary(req.file, 'homescooter_upgrades', 'image');
     } else if (req.body.paymentScreenshot) {
       paymentScreenshot = req.body.paymentScreenshot;
     }
