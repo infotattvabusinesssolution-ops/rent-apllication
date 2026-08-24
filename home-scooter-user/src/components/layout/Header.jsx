@@ -26,6 +26,7 @@ export const Header = () => {
 
   const navLinks = [
     { label: 'Home', path: '/' },
+    { label: '📚 Education Desk', path: '/education', highlight: true },
     { label: '⭐ Premium', path: '/premium', highlight: true },
     { label: '🎁 Lucky Draw', path: '/lucky-draw', highlight: true },
     { label: 'Sell', path: '/sell' },

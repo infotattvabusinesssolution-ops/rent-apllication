@@ -36,6 +36,12 @@ import { PremiumMembersList } from '../pages/Premium/PremiumMembersList';
 import { PremiumUpgradeRequests } from '../pages/Premium/PremiumUpgradeRequests';
 import { PremiumReports } from '../pages/Premium/PremiumReports';
 
+import { EducationDashboard } from '../pages/Education/EducationDashboard';
+import { EducationStudentsList } from '../pages/Education/EducationStudentsList';
+import { EducationContentList } from '../pages/Education/EducationContentList';
+import { EducationNotificationsList } from '../pages/Education/EducationNotificationsList';
+import { EducationReports } from '../pages/Education/EducationReports';
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) return null;
@@ -59,6 +65,13 @@ export const AppRoutes = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         
+        {/* Education Desk Admin Routes */}
+        <Route path="education/dashboard" element={<EducationDashboard />} />
+        <Route path="education/students" element={<EducationStudentsList />} />
+        <Route path="education/content" element={<EducationContentList />} />
+        <Route path="education/notifications" element={<EducationNotificationsList />} />
+        <Route path="education/reports" element={<EducationReports />} />
+
         {/* Premium System Admin Routes */}
         <Route path="premium" element={<PremiumDashboard />} />
         <Route path="premium/content" element={<PremiumContentList />} />

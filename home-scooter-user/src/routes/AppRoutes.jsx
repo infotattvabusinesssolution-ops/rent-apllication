@@ -44,6 +44,14 @@ import { PremiumContentDetail } from '../pages/Premium/PremiumContentDetail';
 import { PremiumMembership } from '../pages/Premium/PremiumMembership';
 import { PremiumRenew } from '../pages/Premium/PremiumRenew';
 
+import { EducationLanding } from '../pages/Education/EducationLanding';
+import { EducationRegister } from '../pages/Education/EducationRegister';
+import { EducationLogin } from '../pages/Education/EducationLogin';
+import { EducationDashboard } from '../pages/Education/EducationDashboard';
+import { EducationContentDetail } from '../pages/Education/EducationContentDetail';
+import { EducationNotifications } from '../pages/Education/EducationNotifications';
+import { EducationProfile } from '../pages/Education/EducationProfile';
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -51,6 +59,15 @@ export const AppRoutes = () => {
         {/* Public Auth Routes */}
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+
+        {/* Education Desk Routes */}
+        <Route path="education" element={<EducationLanding />} />
+        <Route path="education/register" element={<EducationRegister />} />
+        <Route path="education/login" element={<EducationLogin />} />
+        <Route path="education/dashboard" element={<EducationDashboard />} />
+        <Route path="education/content/:id" element={<EducationContentDetail />} />
+        <Route path="education/notifications" element={<EducationNotifications />} />
+        <Route path="education/profile" element={<EducationProfile />} />
 
         {/* Public Premium Intro, Login, and Renew Routes */}
         <Route path="premium" element={<PremiumIntro />} />

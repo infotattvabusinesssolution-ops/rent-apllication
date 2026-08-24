@@ -28,10 +28,17 @@ import {
   Trophy,
   History,
   Star,
+  BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/education/dashboard', label: '📚 Education Dashboard', icon: BookOpen, badgeColor: 'bg-indigo-600' },
+  { path: '/education/students', label: '📚 Education Students', icon: GraduationCap, badgeColor: 'bg-blue-600' },
+  { path: '/education/content', label: '📚 Education Content', icon: BookOpen },
+  { path: '/education/notifications', label: '📚 Education Notifications', icon: Star },
+  { path: '/education/reports', label: '📚 Education Reports', icon: BarChart3 },
   { path: '/premium', label: '⭐ Premium Dashboard', icon: Star, badgeColor: 'bg-amber-500' },
   { path: '/premium/content', label: '⭐ Premium Content', icon: Star },
   { path: '/premium/members', label: '⭐ Premium Members', icon: Users, badgeColor: 'bg-emerald-500' },
