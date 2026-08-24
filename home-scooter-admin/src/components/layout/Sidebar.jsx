@@ -27,10 +27,16 @@ import {
   Receipt,
   Trophy,
   History,
+  Star,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/premium', label: '⭐ Premium Dashboard', icon: Star, badgeColor: 'bg-amber-500' },
+  { path: '/premium/content', label: '⭐ Premium Content', icon: Star },
+  { path: '/premium/members', label: '⭐ Premium Members', icon: Users, badgeColor: 'bg-emerald-500' },
+  { path: '/premium/upgrade-requests', label: '⭐ Upgrade Requests', icon: Ticket, badgeColor: 'bg-rose-500' },
+  { path: '/premium/reports', label: '⭐ Premium Reports', icon: BarChart3 },
   { path: '/lucky-draw', label: 'Lucky Draw Box', icon: Gift, badgeColor: 'bg-purple-600' },
   { path: '/lucky-draw/create', label: '+ Create Lucky Draw', icon: Gift },
   { path: '/lucky-draw/entries', label: 'Draw Entries', icon: Ticket },

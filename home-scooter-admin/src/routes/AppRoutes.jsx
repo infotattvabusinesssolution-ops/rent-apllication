@@ -30,6 +30,12 @@ import { LuckyDrawWinners } from '../pages/LuckyDraw/LuckyDrawWinners';
 import { LuckyDrawAuditLogs } from '../pages/LuckyDraw/LuckyDrawAuditLogs';
 import { LuckyDrawEnquiries } from '../pages/LuckyDraw/LuckyDrawEnquiries';
 
+import { PremiumDashboard } from '../pages/Premium/PremiumDashboard';
+import { PremiumContentList } from '../pages/Premium/PremiumContentList';
+import { PremiumMembersList } from '../pages/Premium/PremiumMembersList';
+import { PremiumUpgradeRequests } from '../pages/Premium/PremiumUpgradeRequests';
+import { PremiumReports } from '../pages/Premium/PremiumReports';
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) return null;
@@ -53,6 +59,13 @@ export const AppRoutes = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         
+        {/* Premium System Admin Routes */}
+        <Route path="premium" element={<PremiumDashboard />} />
+        <Route path="premium/content" element={<PremiumContentList />} />
+        <Route path="premium/members" element={<PremiumMembersList />} />
+        <Route path="premium/upgrade-requests" element={<PremiumUpgradeRequests />} />
+        <Route path="premium/reports" element={<PremiumReports />} />
+
         {/* Lucky Draw Routes */}
         <Route path="lucky-draw" element={<LuckyDrawDashboard />} />
         <Route path="lucky-draw/enquiries" element={<LuckyDrawEnquiries />} />

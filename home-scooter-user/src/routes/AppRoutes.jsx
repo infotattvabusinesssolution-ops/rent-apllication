@@ -37,6 +37,13 @@ import { MyLuckyDraws } from '../pages/LuckyDraw/MyLuckyDraws';
 import { PaymentSuccess } from '../pages/LuckyDraw/PaymentSuccess';
 import { PaymentFailed } from '../pages/LuckyDraw/PaymentFailed';
 
+import { PremiumIntro } from '../pages/Premium/PremiumIntro';
+import { PremiumLogin } from '../pages/Premium/PremiumLogin';
+import { PremiumDashboard } from '../pages/Premium/PremiumDashboard';
+import { PremiumContentDetail } from '../pages/Premium/PremiumContentDetail';
+import { PremiumMembership } from '../pages/Premium/PremiumMembership';
+import { PremiumRenew } from '../pages/Premium/PremiumRenew';
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -44,6 +51,14 @@ export const AppRoutes = () => {
         {/* Public Auth Routes */}
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+
+        {/* Public Premium Intro, Login, and Renew Routes */}
+        <Route path="premium" element={<PremiumIntro />} />
+        <Route path="premium/login" element={<PremiumLogin />} />
+        <Route path="premium/renew" element={<PremiumRenew />} />
+        <Route path="premium/dashboard" element={<PremiumDashboard />} />
+        <Route path="premium/content/:id" element={<PremiumContentDetail />} />
+        <Route path="premium/membership" element={<PremiumMembership />} />
 
         {/* Protected Routes (Redirects to /login if unauthenticated) */}
         <Route element={<ProtectedRoute />}>

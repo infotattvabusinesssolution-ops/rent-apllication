@@ -26,6 +26,7 @@ export const Header = () => {
 
   const navLinks = [
     { label: 'Home', path: '/' },
+    { label: '⭐ Premium', path: '/premium', highlight: true },
     { label: '🎁 Lucky Draw', path: '/lucky-draw', highlight: true },
     { label: 'Sell', path: '/sell' },
     { label: 'Post Ad', path: '/post-ad' },
@@ -159,6 +160,12 @@ export const Header = () => {
                         className="px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5"
                       >
                         <Crown className="w-4 h-4 text-emerald-600" /> ₹100 Subscription
+                      </Link>
+                      <Link
+                        to="/premium"
+                        className="px-4 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 flex items-center gap-2.5"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-500" /> ⭐ Premium Access
                       </Link>
                       <div className="my-1 border-t border-slate-100" />
                       <button

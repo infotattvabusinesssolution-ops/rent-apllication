@@ -30,10 +30,29 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+const mediaFileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|webm|mov|avi|mkv/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
+  if (extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image or video files (jpeg, png, mp4, webm, mov, etc.) are allowed!'));
+  }
+};
+
 const upload = multer({
   storage,
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880', 10) },
   fileFilter,
 });
 
+const uploadMedia = multer({
+  storage,
+  limits: { fileSize: parseInt(process.env.MAX_VIDEO_SIZE || '52428800', 10) }, // 50MB
+  fileFilter: mediaFileFilter,
+});
+
 module.exports = upload;
+module.exports.uploadMedia = uploadMedia;
+
