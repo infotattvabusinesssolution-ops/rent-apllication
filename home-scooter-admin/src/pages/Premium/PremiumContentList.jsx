@@ -19,6 +19,77 @@ import {
   Upload,
 } from 'lucide-react';
 
+// Helper for Direct Browser-to-Cloudinary Chunked Upload (for files > 90MB up to 2GB)
+const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
+  const { cloudName, apiKey, timestamp, folder, signature } = sigData;
+  const totalSize = file.size;
+  const chunkSize = 6 * 1024 * 1024; // 6MB per chunk
+  const ext = file.name.split('.').pop().toLowerCase();
+  const isVideo = /mp4|webm|mov|avi|mkv|3gp|m4v/.test(ext);
+  const resourceType = isVideo ? 'video' : 'image';
+
+  // Small files under 90MB can be uploaded in one single request
+  if (totalSize < 90 * 1024 * 1024) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('api_key', apiKey);
+    formData.append('timestamp', timestamp);
+    formData.append('signature', signature);
+    formData.append('folder', folder);
+
+    const res = await axios.post(
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+      formData,
+      {
+        onUploadProgress: (e) => {
+          if (e.total && onProgress) {
+            onProgress(Math.round((e.loaded * 100) / e.total));
+          }
+        },
+      }
+    );
+    return res.data;
+  }
+
+  // Large files (>= 90MB, e.g. 123MB) use Cloudinary's official Chunked Upload API
+  const uniqueUploadId = `uk_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  let start = 0;
+  let finalResult = null;
+
+  while (start < totalSize) {
+    const end = Math.min(start + chunkSize, totalSize);
+    const chunk = file.slice(start, end);
+
+    const formData = new FormData();
+    formData.append('file', chunk);
+    formData.append('api_key', apiKey);
+    formData.append('timestamp', timestamp);
+    formData.append('signature', signature);
+    formData.append('folder', folder);
+
+    const contentRange = `bytes ${start}-${end - 1}/${totalSize}`;
+
+    const res = await axios.post(
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+      formData,
+      {
+        headers: {
+          'X-Unique-Upload-Id': uniqueUploadId,
+          'Content-Range': contentRange,
+        },
+      }
+    );
+
+    start = end;
+    if (onProgress) {
+      onProgress(Math.round((start * 100) / totalSize));
+    }
+    finalResult = res.data;
+  }
+
+  return finalResult;
+};
+
 export const PremiumContentList = () => {
   const queryClient = useQueryClient();
   const [contentType, setContentType] = useState('ALL');
@@ -156,46 +227,26 @@ export const PremiumContentList = () => {
         // 1. Fetch signed upload params from backend
         const sigRes = await premiumAdminApi.getCloudinarySignature();
         const sigData = sigRes?.data || sigRes;
-        const { cloudName, apiKey, timestamp, folder, signature } = sigData;
 
-        if (!cloudName || !signature) {
+        if (!sigData || (!sigData.cloudName && !sigData.data?.cloudName)) {
           throw new Error('Failed to retrieve valid Cloudinary upload signature from backend');
         }
 
-        // 2. Build Cloudinary FormData
-        const cloudinaryData = new FormData();
-        cloudinaryData.append('file', selectedFile);
-        cloudinaryData.append('api_key', apiKey);
-        cloudinaryData.append('timestamp', timestamp);
-        cloudinaryData.append('signature', signature);
-        cloudinaryData.append('folder', folder);
-
-        const ext = selectedFile.name.split('.').pop().toLowerCase();
-        const isVideoFile = formData.contentType === 'VIDEO' || /mp4|webm|mov|avi|mkv|3gp|m4v/.test(ext);
-        const resourceType = isVideoFile ? 'video' : 'image';
-
-        // 3. Perform Direct Upload to Cloudinary API with real-time progress tracking
-        const uploadRes = await axios.post(
-          `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
-          cloudinaryData,
-          {
-            onUploadProgress: (progressEvent) => {
-              if (progressEvent.total) {
-                const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                setUploadProgress(percent);
-              }
-            },
-          }
+        // 2. Upload to Cloudinary using 6MB chunking for large files
+        const uploadResData = await uploadFileToCloudinaryInChunks(
+          selectedFile,
+          sigData.data || sigData,
+          (percent) => setUploadProgress(percent)
         );
 
-        if (uploadRes.data && uploadRes.data.secure_url) {
-          finalMediaUrl = uploadRes.data.secure_url;
+        if (uploadResData && uploadResData.secure_url) {
+          finalMediaUrl = uploadResData.secure_url;
         } else {
           throw new Error('Cloudinary response did not contain a valid URL');
         }
       }
 
-      // 4. Send light JSON metadata payload to backend API
+      // 3. Send light JSON metadata payload to backend API
       const payload = new FormData();
       payload.append('contentType', formData.contentType);
       payload.append('title', formData.title);
