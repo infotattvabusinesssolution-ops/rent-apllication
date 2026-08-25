@@ -28,12 +28,11 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
       return fileInput;
     }
 
-    let fileBuffer = null;
     let filename = `media_${Date.now()}`;
     let fileSize = 0;
     let mimeType = '';
 
-    // 2. Resolve input (Multer disk file, Multer memory buffer, or local path)
+    // 2. Resolve file path on disk (Multer disk file, Multer memory buffer, or local file path)
     if (fileInput && fileInput.path && fs.existsSync(fileInput.path)) {
       tempFilePath = fileInput.path;
       filename = fileInput.filename || fileInput.originalname || path.basename(fileInput.path);
@@ -43,10 +42,15 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
         fileSize = stats.size;
       } catch (e) {}
     } else if (fileInput && fileInput.buffer) {
-      fileBuffer = fileInput.buffer;
-      filename = fileInput.originalname || filename;
+      filename = fileInput.originalname || `media_${Date.now()}.jpg`;
       mimeType = fileInput.mimetype || '';
-      fileSize = fileBuffer.length;
+      const tempDir = path.join(__dirname, '../../uploads/temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      tempFilePath = path.join(tempDir, `temp_buf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${path.extname(filename)}`);
+      fs.writeFileSync(tempFilePath, fileInput.buffer);
+      fileSize = fileInput.buffer.length;
     } else if (typeof fileInput === 'string' && fs.existsSync(fileInput)) {
       tempFilePath = fileInput;
       filename = path.basename(fileInput);
@@ -54,6 +58,13 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
         const stats = fs.statSync(fileInput);
         fileSize = stats.size;
       } catch (e) {}
+    }
+
+    if (!tempFilePath || !fs.existsSync(tempFilePath)) {
+      if (folder === 'homescooter_premium' || options.isPremium) {
+        throw new Error('No valid file found for upload.');
+      }
+      return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
     }
 
     // 3. Determine resource type (video vs image)
@@ -73,52 +84,50 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
     };
 
     if (isVideo) {
-      uploadOptions.chunk_size = 6000000;
-      uploadOptions.timeout = 600000;
+      uploadOptions.chunk_size = 6000000; // 6MB chunks for large video uploads
+      uploadOptions.timeout = 600000; // 10 minute timeout
     }
 
-    // 4. Execute upload_stream with explicit callback signature
+    // 4. Execute Cloudinary SDK Upload (upload_large for chunked video, upload for images)
+    // Correct SDK signature order: (file_path, options, callback)
     const secureUrl = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        uploadOptions,
-        (error, result) => {
-          const durationMs = Date.now() - startTime;
-          if (error) {
-            console.error('[Cloudinary Upload Error]', {
-              filename,
-              mimetype: mimeType,
-              size: `${sizeMb} MB`,
-              duration: `${durationMs}ms`,
-              message: error.message,
-              http_code: error.http_code,
-            });
-            return reject(error);
-          }
-
-          if (!result || !result.secure_url) {
-            console.error('[Cloudinary Upload Error]', {
-              filename,
-              mimetype: mimeType,
-              size: `${sizeMb} MB`,
-              duration: `${durationMs}ms`,
-              message: 'Cloudinary upload did not return secure_url',
-            });
-            return reject(new Error('Cloudinary upload did not return secure_url'));
-          }
-
-          console.log(`[Cloudinary Upload] Success | ${resourceType.toUpperCase()} | URL: ${result.secure_url} | Duration: ${durationMs}ms`);
-          resolve(result.secure_url);
+      const callback = (error, result) => {
+        const durationMs = Date.now() - startTime;
+        if (error) {
+          console.error('[Cloudinary Upload Error]', {
+            filename,
+            mimetype: mimeType,
+            size: `${sizeMb} MB`,
+            duration: `${durationMs}ms`,
+            message: error.message || (typeof error === 'string' ? error : JSON.stringify(error)),
+            http_code: error.http_code,
+          });
+          return reject(error);
         }
-      );
 
-      if (tempFilePath && fs.existsSync(tempFilePath)) {
-        const readStream = fs.createReadStream(tempFilePath);
-        readStream.on('error', (readErr) => reject(readErr));
-        readStream.pipe(uploadStream);
-      } else if (fileBuffer) {
-        uploadStream.end(fileBuffer);
-      } else {
-        reject(new Error('No valid buffer or file stream available for Cloudinary upload.'));
+        if (!result || !result.secure_url) {
+          console.error('[Cloudinary Upload Error]', {
+            filename,
+            mimetype: mimeType,
+            size: `${sizeMb} MB`,
+            duration: `${durationMs}ms`,
+            message: 'Cloudinary upload response missing secure_url',
+          });
+          return reject(new Error('Cloudinary upload response missing secure_url'));
+        }
+
+        console.log(`[Cloudinary Upload] Success | ${resourceType.toUpperCase()} | URL: ${result.secure_url} | Duration: ${durationMs}ms`);
+        resolve(result.secure_url);
+      };
+
+      try {
+        if (isVideo) {
+          cloudinary.uploader.upload_large(tempFilePath, uploadOptions, callback);
+        } else {
+          cloudinary.uploader.upload(tempFilePath, uploadOptions, callback);
+        }
+      } catch (err) {
+        reject(err);
       }
     });
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { premiumAdminApi } from '../../api/premiumAdminApi';
 import { toast } from 'sonner';
 import {
@@ -25,7 +26,7 @@ export const PremiumContentList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContent, setEditingContent] = useState(null);
 
-  // Form State
+  // Form State & Direct Upload Progress
   const [formData, setFormData] = useState({
     contentType: 'TEXT',
     title: '',
@@ -39,6 +40,8 @@ export const PremiumContentList = () => {
     premiumOnly: true,
   });
   const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadingDirect, setIsUploadingDirect] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['premiumAdminContent', contentType, search],
@@ -94,6 +97,8 @@ export const PremiumContentList = () => {
   const resetForm = () => {
     setEditingContent(null);
     setSelectedFile(null);
+    setUploadProgress(0);
+    setIsUploadingDirect(false);
     setFormData({
       contentType: 'TEXT',
       title: '',
@@ -116,6 +121,8 @@ export const PremiumContentList = () => {
   const handleOpenEdit = (item) => {
     setEditingContent(item);
     setSelectedFile(null);
+    setUploadProgress(0);
+    setIsUploadingDirect(false);
     setFormData({
       contentType: item.contentType,
       title: item.title,
@@ -131,30 +138,77 @@ export const PremiumContentList = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       toast.error('Title is required');
       return;
     }
 
-    const payload = new FormData();
-    payload.append('contentType', formData.contentType);
-    payload.append('title', formData.title);
-    payload.append('description', formData.description);
-    payload.append('mediaUrl', formData.mediaUrl);
-    payload.append('thumbnailUrl', formData.thumbnailUrl);
-    payload.append('displayOrder', formData.displayOrder);
-    if (formData.startDate) payload.append('startDate', formData.startDate);
-    if (formData.endDate) payload.append('endDate', formData.endDate);
-    payload.append('status', formData.status);
-    payload.append('premiumOnly', formData.premiumOnly);
+    let finalMediaUrl = formData.mediaUrl;
 
-    if (selectedFile) {
-      payload.append('media', selectedFile);
+    try {
+      // Direct Client Upload to Cloudinary CDN if a file is selected
+      if (selectedFile) {
+        setIsUploadingDirect(true);
+        setUploadProgress(0);
+
+        // 1. Fetch signed upload params from backend
+        const sigRes = await premiumAdminApi.getCloudinarySignature();
+        const { cloudName, apiKey, timestamp, folder, signature } = sigRes.data;
+
+        // 2. Build Cloudinary FormData
+        const cloudinaryData = new FormData();
+        cloudinaryData.append('file', selectedFile);
+        cloudinaryData.append('api_key', apiKey);
+        cloudinaryData.append('timestamp', timestamp);
+        cloudinaryData.append('signature', signature);
+        cloudinaryData.append('folder', folder);
+
+        const ext = selectedFile.name.split('.').pop().toLowerCase();
+        const isVideoFile = formData.contentType === 'VIDEO' || /mp4|webm|mov|avi|mkv|3gp|m4v/.test(ext);
+        const resourceType = isVideoFile ? 'video' : 'image';
+
+        // 3. Perform Direct Upload to Cloudinary API with real-time progress tracking
+        const uploadRes = await axios.post(
+          `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+          cloudinaryData,
+          {
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setUploadProgress(percent);
+              }
+            },
+          }
+        );
+
+        if (uploadRes.data && uploadRes.data.secure_url) {
+          finalMediaUrl = uploadRes.data.secure_url;
+        } else {
+          throw new Error('Cloudinary response did not contain a valid URL');
+        }
+      }
+
+      // 4. Send light JSON metadata payload to backend API
+      const payload = new FormData();
+      payload.append('contentType', formData.contentType);
+      payload.append('title', formData.title);
+      payload.append('description', formData.description);
+      payload.append('mediaUrl', finalMediaUrl);
+      payload.append('thumbnailUrl', formData.thumbnailUrl);
+      payload.append('displayOrder', formData.displayOrder);
+      if (formData.startDate) payload.append('startDate', formData.startDate);
+      if (formData.endDate) payload.append('endDate', formData.endDate);
+      payload.append('status', formData.status);
+      payload.append('premiumOnly', formData.premiumOnly);
+
+      saveMutation.mutate(payload);
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || err.message || 'Direct Cloudinary Upload Failed');
+    } finally {
+      setIsUploadingDirect(false);
     }
-
-    saveMutation.mutate(payload);
   };
 
   const contentItems = data?.data || [];
@@ -463,6 +517,25 @@ export const PremiumContentList = () => {
                 </div>
               </div>
 
+              {/* Direct Upload Progress Bar */}
+              {isUploadingDirect && (
+                <div className="space-y-1.5 bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                  <div className="flex justify-between text-xs font-bold text-amber-900">
+                    <span>🚀 Direct Cloudinary Upload in Progress...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-amber-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-amber-500 to-amber-600 h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-amber-700 font-medium">
+                    Uploading file directly to Cloudinary CDN — bypassing VPS server limits.
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-between border-t border-slate-100 pt-3">
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
                   <input
@@ -478,21 +551,25 @@ export const PremiumContentList = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
+                    disabled={isUploadingDirect || saveMutation.isPending}
                     className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={saveMutation.isPending}
-                    className="px-5 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md flex items-center gap-2"
+                    disabled={isUploadingDirect || saveMutation.isPending}
+                    className="px-5 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md flex items-center gap-2 disabled:opacity-50"
                   >
-                    {saveMutation.isPending ? (
+                    {isUploadingDirect ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        {selectedFile && formData.contentType === 'VIDEO'
-                          ? 'Uploading Video to Cloudinary CDN...'
-                          : 'Saving...'}
+                        Uploading ({uploadProgress}%)...
+                      </>
+                    ) : saveMutation.isPending ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Saving...
                       </>
                     ) : editingContent ? (
                       'Update Content'

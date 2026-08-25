@@ -1,4 +1,5 @@
 const fs = require('fs');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const PremiumMember = require('../models/PremiumMember');
@@ -716,8 +717,36 @@ const getPremiumReports = async (req, res) => {
   }
 };
 
+// @desc    Get Cloudinary Signed Parameters for Direct Client Upload
+// @route   GET /api/v1/admin/premium/cloudinary-signature
+// @access  Private (Admin)
+const getCloudinarySignature = async (req, res) => {
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const folder = 'homescooter_premium';
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dwmokcagc';
+    const apiKey = process.env.CLOUDINARY_API_KEY || '811782714826833';
+    const apiSecret = process.env.CLOUDINARY_API_SECRET || 'YaT7sDQ5TSUNH276l35lPYXp9fI';
+
+    const signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const signature = crypto.createHash('sha1').update(signatureStr).digest('hex');
+
+    return res.json({
+      success: true,
+      cloudName,
+      apiKey,
+      timestamp,
+      folder,
+      signature,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getPremiumDashboardStats,
+  getCloudinarySignature,
 
   getPremiumContent,
   createPremiumContent,

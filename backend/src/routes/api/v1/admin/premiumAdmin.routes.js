@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   getPremiumDashboardStats,
+  getCloudinarySignature,
   getPremiumContent,
   createPremiumContent,
   getPremiumContentById,
@@ -28,8 +29,9 @@ const { uploadMedia } = require('../../../../middleware/uploadMiddleware');
 // Protect all admin premium routes
 router.use(protectAdmin);
 
-// Dashboard
+// Dashboard & Signature
 router.get('/dashboard', getPremiumDashboardStats);
+router.get('/cloudinary-signature', getCloudinarySignature);
 
 // Content Routes
 router.get('/content', getPremiumContent);
