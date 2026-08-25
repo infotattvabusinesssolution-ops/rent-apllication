@@ -31,24 +31,29 @@ const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
   // Small files under 90MB can be uploaded in one single request
   if (totalSize < 90 * 1024 * 1024) {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', file, file.name);
     formData.append('api_key', apiKey);
     formData.append('timestamp', timestamp);
     formData.append('signature', signature);
     formData.append('folder', folder);
 
-    const res = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
-      formData,
-      {
-        onUploadProgress: (e) => {
-          if (e.total && onProgress) {
-            onProgress(Math.round((e.loaded * 100) / e.total));
-          }
-        },
-      }
-    );
-    return res.data;
+    try {
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+        formData,
+        {
+          onUploadProgress: (e) => {
+            if (e.total && onProgress) {
+              onProgress(Math.round((e.loaded * 100) / e.total));
+            }
+          },
+        }
+      );
+      return res.data;
+    } catch (err) {
+      const cloudError = err.response?.data?.error?.message || err.message || 'Cloudinary upload failed';
+      throw new Error(`Cloudinary Upload Error: ${cloudError}`);
+    }
   }
 
   // Large files (>= 90MB, e.g. 123MB) use Cloudinary's official Chunked Upload API
@@ -61,7 +66,7 @@ const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
     const chunk = file.slice(start, end);
 
     const formData = new FormData();
-    formData.append('file', chunk);
+    formData.append('file', chunk, file.name); // Crucial file.name 3rd argument for Blob slices
     formData.append('api_key', apiKey);
     formData.append('timestamp', timestamp);
     formData.append('signature', signature);
@@ -69,22 +74,28 @@ const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
 
     const contentRange = `bytes ${start}-${end - 1}/${totalSize}`;
 
-    const res = await axios.post(
-      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
-      formData,
-      {
-        headers: {
-          'X-Unique-Upload-Id': uniqueUploadId,
-          'Content-Range': contentRange,
-        },
-      }
-    );
+    try {
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+        formData,
+        {
+          headers: {
+            'X-Unique-Upload-Id': uniqueUploadId,
+            'Content-Range': contentRange,
+          },
+        }
+      );
 
-    start = end;
-    if (onProgress) {
-      onProgress(Math.round((start * 100) / totalSize));
+      start = end;
+      if (onProgress) {
+        onProgress(Math.round((start * 100) / totalSize));
+      }
+      finalResult = res.data;
+    } catch (err) {
+      const cloudError = err.response?.data?.error?.message || err.message || 'Cloudinary chunk upload failed';
+      console.error('[Cloudinary Chunk Error]', cloudError, err.response?.data);
+      throw new Error(`Cloudinary Chunk Upload Error: ${cloudError}`);
     }
-    finalResult = res.data;
   }
 
   return finalResult;
