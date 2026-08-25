@@ -225,7 +225,7 @@ const updateBadges = async (req, res) => {
 // @access  Private (Admin)
 const updateLuckyDrawStatus = async (req, res) => {
   try {
-    const { luckyDrawStatus, isLuckyDrawEligible } = req.body;
+    const { luckyDrawStatus, isLuckyDrawEligible, luckyDrawImage } = req.body;
     const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
 
     if (!ad) {
@@ -242,6 +242,10 @@ const updateLuckyDrawStatus = async (req, res) => {
       // Toggle logic
       ad.luckyDrawStatus = ad.luckyDrawStatus === 'APPLY' ? 'NOT_APPLY' : 'APPLY';
       ad.isLuckyDrawEligible = ad.luckyDrawStatus === 'APPLY';
+    }
+
+    if (luckyDrawImage !== undefined) {
+      ad.luckyDrawImage = luckyDrawImage;
     }
 
     await ad.save();
@@ -293,6 +297,45 @@ const deleteAd = async (req, res) => {
   }
 };
 
+// @desc    Upload custom Lucky Draw banner image to Cloudinary CDN for an ad
+// @route   POST /api/v1/admin/ads/:id/lucky-draw-image
+// @access  Private (Admin)
+const uploadLuckyDrawImage = async (req, res) => {
+  try {
+    const { uploadToCloudinary } = require('../utils/cloudinary');
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
+
+    if (!ad) {
+      return res.status(404).json({ success: false, message: 'Advertisement not found' });
+    }
+
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = await uploadToCloudinary(req.file, 'homescooter_lucky_draw');
+    } else if (req.body.image && typeof req.body.image === 'string') {
+      imageUrl = await uploadToCloudinary(req.body.image, 'homescooter_lucky_draw');
+    }
+
+    if (!imageUrl) {
+      return res.status(400).json({ success: false, message: 'No valid image provided' });
+    }
+
+    ad.luckyDrawImage = imageUrl;
+    ad.luckyDrawStatus = 'APPLY';
+    ad.isLuckyDrawEligible = true;
+    await ad.save();
+
+    return res.json({
+      success: true,
+      message: 'Lucky Draw banner image uploaded to Cloudinary CDN successfully!',
+      luckyDrawImage: imageUrl,
+      ad,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getAds,
   getPendingAds,
@@ -301,6 +344,7 @@ module.exports = {
   rejectAd,
   updateBadges,
   updateLuckyDrawStatus,
+  uploadLuckyDrawImage,
   unpublishAd,
   deleteAd,
 };

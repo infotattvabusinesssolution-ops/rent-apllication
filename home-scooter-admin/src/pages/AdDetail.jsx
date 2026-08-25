@@ -30,6 +30,7 @@ import {
   Tag,
   ArrowLeft,
   Gift,
+  Upload,
 } from 'lucide-react';
 
 export const AdDetail = () => {
@@ -41,6 +42,7 @@ export const AdDetail = () => {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [banConfirmOpen, setBanConfirmOpen] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { data: ad, isLoading, isError } = useQuery({
     queryKey: ['adDetail', id],
@@ -75,11 +77,27 @@ export const AdDetail = () => {
   });
 
   const luckyDrawMutation = useMutation({
-    mutationFn: ({ luckyDrawStatus }) => adsApi.toggleLuckyDrawStatus(id, luckyDrawStatus),
+    mutationFn: ({ luckyDrawStatus, luckyDrawImage }) =>
+      adsApi.toggleLuckyDrawStatus(id, luckyDrawStatus, luckyDrawImage),
     onSuccess: (res) => {
       toast.success(res.message || 'Lucky Draw setting updated');
       queryClient.invalidateQueries(['adDetail', id]);
       queryClient.invalidateQueries(['ads']);
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: (file) => adsApi.uploadLuckyDrawImage(id, file),
+    onMutate: () => setIsUploadingImage(true),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Lucky Draw banner uploaded to Cloudinary CDN successfully!');
+      setIsUploadingImage(false);
+      queryClient.invalidateQueries(['adDetail', id]);
+      queryClient.invalidateQueries(['ads']);
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Failed to upload image to Cloudinary');
+      setIsUploadingImage(false);
     },
   });
 
@@ -367,24 +385,83 @@ export const AdDetail = () => {
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Promotional Badges & Settings</span>
                 
                 {/* Lucky Draw Setting (Apply / Not Apply) */}
-                <div className="flex items-center justify-between p-2.5 bg-red-50/60 rounded-xl border border-red-200">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Gift className="w-4 h-4 text-red-600" /> Lucky Draw Setting
-                  </span>
-                  <button
-                    onClick={() =>
-                      luckyDrawMutation.mutate({
-                        luckyDrawStatus: (ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) ? 'NOT_APPLY' : 'APPLY',
-                      })
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-black cursor-pointer transition-all border ${
-                      (ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible)
-                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                        : 'bg-slate-200 text-slate-700 border-slate-300'
-                    }`}
-                  >
-                    {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) ? '👉 APPLY' : '👉 NOT APPLY'}
-                  </button>
+                <div className="p-3 bg-red-50/60 rounded-xl border border-red-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Gift className="w-4 h-4 text-red-600" /> Lucky Draw Setting
+                    </span>
+                    <button
+                      onClick={() =>
+                        luckyDrawMutation.mutate({
+                          luckyDrawStatus: (ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) ? 'NOT_APPLY' : 'APPLY',
+                        })
+                      }
+                      className={`px-3 py-1 rounded-full text-xs font-black cursor-pointer transition-all border ${
+                        (ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible)
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                          : 'bg-slate-200 text-slate-700 border-slate-300'
+                      }`}
+                    >
+                      {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) ? '👉 APPLY' : '👉 NOT APPLY'}
+                    </button>
+                  </div>
+
+                  {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
+                    <div className="pt-2 border-t border-red-200/80 space-y-2">
+                      <label className="text-[11px] font-bold text-slate-700 block">
+                        Lucky Draw Banner Image (Cloudinary CDN)
+                      </label>
+
+                      {ad.luckyDrawImage ? (
+                        <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                          <img
+                            src={ad.luckyDrawImage}
+                            alt="Lucky Draw Banner"
+                            className="w-16 h-10 rounded object-cover border border-amber-300 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] text-emerald-700 font-bold block truncate">
+                              Cloudinary Banner Active ✓
+                            </span>
+                            <button
+                              onClick={() =>
+                                luckyDrawMutation.mutate({
+                                  luckyDrawStatus: 'APPLY',
+                                  luckyDrawImage: null,
+                                })
+                              }
+                              className="text-[10px] text-red-600 hover:underline font-semibold"
+                            >
+                              Remove Custom Image
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-slate-500 italic block">
+                          Default built-in gift banner is currently active.
+                        </span>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 shadow-xs transition-colors">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{isUploadingImage ? 'Uploading to Cloudinary...' : 'Upload Image to Cloudinary'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploadingImage}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                uploadImageMutation.mutate(file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">

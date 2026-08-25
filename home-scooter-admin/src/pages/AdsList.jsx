@@ -131,6 +131,13 @@ export const AdsList = () => {
             Manage, review, feature and moderate all marketplace listings across all categories.
           </p>
         </div>
+        <button
+          onClick={() => navigate('/ads/lucky-draw')}
+          className="px-4 py-2.5 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-700 hover:to-amber-600 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer transition-all shrink-0"
+        >
+          <Gift className="w-4 h-4 text-amber-200" />
+          <span>Ads → Lucky Draw</span>
+        </button>
       </div>
 
       {/* Tabs */}

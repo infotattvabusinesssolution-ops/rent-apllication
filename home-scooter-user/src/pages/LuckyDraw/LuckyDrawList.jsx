@@ -1,117 +1,80 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
-import { luckyDrawUserApi } from '../../api/luckyDrawUserApi';
-import { CountdownTimer } from '../../components/LuckyDraw/CountdownTimer';
-import { Gift, Ticket, ArrowRight, ShieldCheck, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { adsApi } from '../../api/adsApi';
+import { ListingCard } from '../../components/marketplace/ListingCard';
+import { Gift, Sparkles, Layers } from 'lucide-react';
 
 export const LuckyDrawList = () => {
   const navigate = useNavigate();
 
-  const { data: drawsData, isLoading } = useQuery({
-    queryKey: ['userLuckyDrawsCatalog'],
-    queryFn: () => luckyDrawUserApi.getDraws(),
+  const { data: adsData, isLoading } = useQuery({
+    queryKey: ['luckyDrawEligibleAds'],
+    queryFn: () => adsApi.getAds({ limit: 50 }),
   });
 
-  const draws = drawsData?.data || [];
+  const allAds = adsData?.data || adsData || [];
+  const luckyDrawAds = allAds.filter(
+    (ad) => ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold mb-2">
-            <Gift className="w-4 h-4 text-purple-600" /> Official Platform Rewards
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-red-500/10 relative overflow-hidden">
+        <div className="relative z-10 max-w-2xl space-y-2">
+          <div className="inline-flex items-center gap-1.5 bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-xs">
+            <Sparkles className="w-4 h-4 fill-slate-950" /> Admin Approved Offers
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">Lucky Draw Campaigns</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Purchase entries to participate. Winners are automatically selected by system algorithm upon closing.
+          <h1 className="text-2xl sm:text-4xl font-serif font-black tracking-wide leading-tight">
+            Lucky Draw Product & Service Ads 🎁
+          </h1>
+          <p className="text-xs sm:text-sm text-amber-100 font-serif leading-relaxed">
+            Browse all verified listings participating in our exclusive Lucky Draw program. Tap on any ad to express interest and connect directly with Admin on WhatsApp!
           </p>
         </div>
-
-        <Link
-          to="/my-lucky-draws"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-colors shadow-xs"
-        >
-          <Ticket className="w-4 h-4" /> My Tickets & Draws
-        </Link>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid of Lucky Draw Ads */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-serif font-bold text-slate-900 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-red-600" />
+            Active Lucky Draw Listings ({luckyDrawAds.length})
+          </h2>
+        </div>
+
         {isLoading ? (
-          <div className="col-span-full py-16 text-center text-slate-400 text-sm">
-            Loading active campaigns...
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="h-64 bg-slate-200 rounded-2xl animate-pulse" />
+            ))}
           </div>
-        ) : draws.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-slate-500 text-sm">
-            No active lucky draws available right now. Check back soon!
+        ) : luckyDrawAds.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 space-y-3">
+            <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 mx-auto flex items-center justify-center">
+              <Gift className="w-8 h-8" />
+            </div>
+            <h3 className="font-serif font-bold text-slate-800 text-base">No Active Lucky Draw Ads</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Currently there are no marketplace listings set to Lucky Draw by Admin. Check back soon!
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-serif font-bold hover:bg-slate-800 transition-colors"
+            >
+              Browse All Marketplace Listings
+            </button>
           </div>
         ) : (
-          draws.map((draw) => (
-            <div
-              key={draw._id}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between"
-            >
-              <div className="relative h-48 bg-slate-100">
-                {draw.bannerImage || draw.thumbnailImage ? (
-                  <img
-                    src={draw.bannerImage || draw.thumbnailImage}
-                    alt={draw.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-purple-800 to-indigo-600 text-white font-bold text-lg">
-                    {draw.title}
-                  </div>
-                )}
-                <span className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold text-slate-900 shadow-xs">
-                  ₹{draw.entryPrice} / Entry
-                </span>
-                <span className="absolute top-3 right-3 px-3 py-1 bg-purple-900/80 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase">
-                  {draw.status}
-                </span>
-              </div>
-
-              <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base line-clamp-1">{draw.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                    {draw.shortDescription || 'Participate and get a chance to win amazing prizes.'}
-                  </p>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Progress:</span>
-                    <span className="font-bold text-purple-700">
-                      {draw.totalEntries.toLocaleString()} / {draw.maxEntries.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-purple-600 h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${Math.min(100, Math.round((draw.totalEntries / draw.maxEntries) * 100))}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="pt-2">
-                    <CountdownTimer targetDate={draw.endDate} />
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => navigate(`/lucky-draw/${draw._id}`)}
-                  className="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-xs hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 shadow-md shadow-purple-500/10"
-                >
-                  BUY ENTRY NOW (₹{draw.entryPrice})
-                </button>
-              </div>
-            </div>
-          ))
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {luckyDrawAds.map((ad) => (
+              <ListingCard key={ad.id || ad._id} ad={ad} />
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
 };
+

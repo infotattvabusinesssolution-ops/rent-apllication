@@ -51,6 +51,7 @@ const advertisementSchema = new mongoose.Schema(
       index: true,
     },
     isLuckyDrawEligible: { type: Boolean, default: false },
+    luckyDrawImage: { type: String, default: null },
 
     // Category Specific Metadata
     dimensions: { type: String, default: null },

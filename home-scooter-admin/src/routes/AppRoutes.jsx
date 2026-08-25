@@ -80,15 +80,8 @@ export const AppRoutes = () => {
         <Route path="premium/reports" element={<PremiumReports />} />
 
         {/* Lucky Draw Routes */}
-        <Route path="lucky-draw" element={<LuckyDrawDashboard />} />
+        <Route path="lucky-draw" element={<Navigate to="/ads/lucky-draw" replace />} />
         <Route path="lucky-draw/enquiries" element={<LuckyDrawEnquiries />} />
-        <Route path="lucky-draw/list" element={<LuckyDrawList />} />
-        <Route path="lucky-draw/create" element={<LuckyDrawCreate />} />
-        <Route path="lucky-draw/entries" element={<LuckyDrawEntries />} />
-        <Route path="lucky-draw/payments" element={<LuckyDrawPayments />} />
-        <Route path="lucky-draw/winners" element={<LuckyDrawWinners />} />
-        <Route path="lucky-draw/audit-logs" element={<LuckyDrawAuditLogs />} />
-        <Route path="lucky-draw/:id" element={<LuckyDrawDetail />} />
 
         <Route path="ads" element={<AdsList />} />
         <Route path="ads/lucky-draw" element={<LuckyDrawEnquiries />} />

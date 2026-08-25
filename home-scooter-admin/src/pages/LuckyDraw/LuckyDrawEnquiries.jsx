@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { luckyDrawAdminApi } from '../../api/luckyDrawAdminApi';
 import { adsApi } from '../../api/adsApi';
-import { Gift, Search, MessageSquare, ExternalLink, CheckCircle2, Clock, Filter, Eye, PhoneCall } from 'lucide-react';
+import { Gift, Search, MessageSquare, ExternalLink, CheckCircle2, Clock, Filter, Eye, PhoneCall, Upload, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const LuckyDrawEnquiries = () => {
@@ -11,6 +11,7 @@ export const LuckyDrawEnquiries = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
+  const [uploadingAdId, setUploadingAdId] = useState(null);
 
   // 1. Fetch Lucky Draw Enquiries
   const { data: enquiriesData, isLoading: isLoadingEnquiries } = useQuery({
@@ -46,11 +47,27 @@ export const LuckyDrawEnquiries = () => {
   });
 
   const toggleLuckyDrawMutation = useMutation({
-    mutationFn: ({ id, luckyDrawStatus }) => adsApi.toggleLuckyDrawStatus(id, luckyDrawStatus),
+    mutationFn: ({ id, luckyDrawStatus, luckyDrawImage }) =>
+      adsApi.toggleLuckyDrawStatus(id, luckyDrawStatus, luckyDrawImage),
     onSuccess: (res) => {
       toast.success(res.message || 'Lucky Draw status updated');
       queryClient.invalidateQueries(['adminLuckyDrawAds']);
       queryClient.invalidateQueries(['ads']);
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: ({ id, file }) => adsApi.uploadLuckyDrawImage(id, file),
+    onMutate: ({ id }) => setUploadingAdId(id),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Lucky Draw banner uploaded to Cloudinary CDN successfully!');
+      setUploadingAdId(null);
+      queryClient.invalidateQueries(['adminLuckyDrawAds']);
+      queryClient.invalidateQueries(['ads']);
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Failed to upload image to Cloudinary');
+      setUploadingAdId(null);
     },
   });
 
@@ -298,8 +315,8 @@ export const LuckyDrawEnquiries = () => {
                 <tr className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200/80 tracking-wider">
                   <th className="px-4 py-3">Ad Listing</th>
                   <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Seller Details</th>
                   <th className="px-4 py-3">Lucky Draw Setting</th>
+                  <th className="px-4 py-3">Lucky Draw Image Banner</th>
                   <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -343,11 +360,6 @@ export const LuckyDrawEnquiries = () => {
                         </td>
 
                         <td className="px-4 py-3.5">
-                          <p className="font-bold text-slate-800">{ad.posterName}</p>
-                          <p className="text-[11px] text-slate-500">{ad.posterPhone}</p>
-                        </td>
-
-                        <td className="px-4 py-3.5">
                           <span
                             className={`px-3 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 ${
                               isApply
@@ -357,6 +369,50 @@ export const LuckyDrawEnquiries = () => {
                           >
                             <span>{isApply ? '👉 APPLY' : '👉 NOT APPLY'}</span>
                           </span>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          {isApply ? (
+                            <div className="space-y-1.5 max-w-xs">
+                              {ad.luckyDrawImage ? (
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    src={ad.luckyDrawImage}
+                                    alt="Lucky Draw Banner"
+                                    className="w-12 h-8 rounded object-cover border border-amber-300 shrink-0"
+                                  />
+                                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 truncate">
+                                    Cloudinary Banner Active ✓
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-slate-500 font-semibold block">
+                                  Default Gift Banner Active
+                                </span>
+                              )}
+
+                              <div className="flex items-center gap-1.5">
+                                <label className="cursor-pointer bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1 shadow-xs transition-colors">
+                                  <Upload className="w-3 h-3" />
+                                  <span>{uploadingAdId === ad.id ? 'Uploading to Cloudinary...' : 'Upload Cloudinary Image'}</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={uploadingAdId === ad.id}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        uploadImageMutation.mutate({ id: ad.id, file });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Not Apply (Hidden)</span>
+                          )}
                         </td>
 
                         <td className="px-4 py-3.5 text-right">

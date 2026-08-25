@@ -168,14 +168,41 @@ export const AdDetail = () => {
           />
 
           {/* Floating Category Badge (Top Left) */}
-          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-xs font-bold text-slate-900">
+          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 text-xs font-bold text-slate-900 z-10">
             <span>{ad.category === 'Layout Sites' ? '🗺️' : ad.category === 'Electric Scooters' ? '🛵' : '🏢'}</span>
             <span>{ad.category}</span>
           </div>
 
-          {/* Floating High Demand / Featured Badge (Top Right) */}
-          {(ad.isHighDemand || ad.isFeatured) && (
-            <div className="absolute top-3 right-3 bg-gradient-to-r from-red-500 to-rose-600 text-white px-3 py-1.5 rounded-full shadow-md text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
+          {/* Floating Lucky Draw Badge / Image Thumbnail (Top Right Corner) */}
+          {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLuckyDrawModalOpen(true);
+              }}
+              className="absolute top-3 right-3 z-20 bg-gradient-to-r from-red-600 to-amber-500 text-white p-1.5 pl-2.5 rounded-full shadow-lg border border-amber-300 flex items-center gap-2 cursor-pointer hover:scale-105 transition-all animate-pulse"
+              title="Lucky Draw Active - Click to express interest!"
+            >
+              {ad.luckyDrawImage ? (
+                <img
+                  src={ad.luckyDrawImage}
+                  alt="Lucky Draw Offer"
+                  className="w-8 h-8 rounded-full object-cover border border-white shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-inner">
+                  🎁
+                </div>
+              )}
+              <span className="text-[10px] font-black uppercase tracking-wider pr-1.5">
+                Lucky Draw
+              </span>
+            </div>
+          )}
+
+          {/* Floating High Demand / Featured Badge (Below Top Right) */}
+          {(ad.isHighDemand || ad.isFeatured) && !(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
+            <div className="absolute top-3 right-3 bg-gradient-to-r from-red-500 to-rose-600 text-white px-3 py-1.5 rounded-full shadow-md text-[10px] font-black tracking-wider uppercase flex items-center gap-1 z-10">
               <span>📈 HIGH DEMAND</span>
             </div>
           )}
@@ -209,31 +236,68 @@ export const AdDetail = () => {
       {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
         <div
           onClick={() => setIsLuckyDrawModalOpen(true)}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 p-4 text-white shadow-lg cursor-pointer transform transition-all hover:scale-[1.01] active:scale-[0.99] border border-amber-300/40"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 p-5 text-white shadow-xl shadow-red-500/20 cursor-pointer transform transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] border-2 border-amber-300/50 group"
         >
-          <div className="relative z-10 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-amber-300 shrink-0 shadow-inner">
-                <Gift className="w-6 h-6 text-amber-300 animate-bounce" />
-              </div>
-              <div className="min-w-0">
-                <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mb-1">
+          {ad.luckyDrawImage ? (
+            <div className="relative z-10 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
                   <Sparkles className="w-3 h-3 fill-slate-950" /> Lucky Draw Active
                 </span>
-                <h3 className="font-serif font-black text-sm sm:text-base leading-tight text-white truncate">
-                  ENTER TO WIN PRIZES
-                </h3>
-                <p className="text-[10px] sm:text-xs text-amber-100 font-serif font-light truncate">
-                  Tap to express interest & send details to Admin WhatsApp!
-                </p>
+                <span className="text-[10px] text-amber-200 font-bold tracking-wide uppercase bg-black/30 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
+                  Tap Image to Participate
+                </span>
               </div>
+              <div className="rounded-2xl overflow-hidden border border-amber-300/40 shadow-lg aspect-[21/9]">
+                <img
+                  src={ad.luckyDrawImage}
+                  alt="Lucky Draw Offer Banner"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <button className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-serif font-black text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/30">
+                <span>I am Interested to Know More</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
+          ) : (
+            <>
+              {/* Background Decorative Graphic Light Gradients & Glow */}
+              <div className="absolute -right-8 -top-8 w-32 h-32 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-red-400/30 rounded-full blur-2xl pointer-events-none" />
 
-            <button className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-serif font-black text-xs px-3 py-2 rounded-xl shrink-0 flex items-center gap-1 shadow-md">
-              <span>I'm Interested</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              <div className="relative z-10 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-300 p-0.5 shadow-lg shrink-0 group-hover:rotate-6 transition-transform">
+                    <div className="w-full h-full bg-slate-900/90 rounded-[14px] flex items-center justify-center text-amber-300">
+                      <Gift className="w-7 h-7 text-amber-300 animate-bounce" />
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
+                        <Sparkles className="w-3 h-3 fill-slate-950" /> Lucky Draw Active
+                      </span>
+                      <span className="text-[10px] text-amber-200 font-bold tracking-wide uppercase bg-black/20 px-2 py-0.5 rounded-full backdrop-blur-xs">
+                        Admin Approved
+                      </span>
+                    </div>
+                    <h3 className="font-serif font-black text-base sm:text-lg leading-tight text-white tracking-wide truncate">
+                      ENTER TO WIN EXCITING PRIZES 🎁
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-amber-100 font-serif font-medium truncate mt-0.5">
+                      Click here to register interest & details to Admin WhatsApp
+                    </p>
+                  </div>
+                </div>
+
+                <button className="bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-serif font-black text-xs px-3.5 py-2.5 rounded-2xl shrink-0 flex items-center gap-1.5 shadow-lg shadow-amber-500/30 transition-all group-hover:translate-x-1">
+                  <span>I'm Interested</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 

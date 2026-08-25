@@ -65,9 +65,14 @@ export const ListingCard = ({ ad, onFavoriteToggle }) => {
               </Badge>
             )}
             {(ad.luckyDrawStatus === 'APPLY' || ad.isLuckyDrawEligible) && (
-              <Badge variant="danger" size="sm" className="shadow-md animate-pulse">
-                🎁 Lucky Draw
-              </Badge>
+              <span className="bg-gradient-to-r from-red-600 to-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-md animate-pulse flex items-center gap-1">
+                {ad.luckyDrawImage ? (
+                  <img src={ad.luckyDrawImage} alt="" className="w-3.5 h-3.5 rounded-full object-cover border border-white shrink-0" />
+                ) : (
+                  <span>🎁</span>
+                )}
+                <span>Lucky Draw</span>
+              </span>
             )}
           </div>
 
