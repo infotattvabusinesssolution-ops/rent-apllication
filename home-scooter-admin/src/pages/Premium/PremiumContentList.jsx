@@ -472,14 +472,21 @@ export const PremiumContentList = () => {
                     />
                   </div>
 
-                  {/* Video / Banner Preview */}
+                  {/* Video URL Indicator for Admin Panel */}
                   {formData.contentType === 'VIDEO' && formData.mediaUrl && (
-                    <div className="mt-2 rounded-lg overflow-hidden border border-slate-300 bg-black max-h-48 flex justify-center">
-                      <video
-                        src={formData.mediaUrl}
-                        controls
-                        className="max-h-48 w-full object-contain"
-                      />
+                    <div className="mt-2 p-2.5 rounded-lg border border-purple-200 bg-purple-50 flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 font-bold text-purple-900 truncate">
+                        <Video className="w-4 h-4 text-purple-600 shrink-0" />
+                        <span className="truncate">{formData.mediaUrl}</span>
+                      </div>
+                      <a
+                        href={formData.mediaUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold text-[10px] rounded-md shrink-0 transition-colors"
+                      >
+                        Open Link ↗
+                      </a>
                     </div>
                   )}
 
