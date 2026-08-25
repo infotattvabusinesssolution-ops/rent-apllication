@@ -10,14 +10,17 @@ export const premiumAdminApi = {
   createContent: (formData) =>
     axiosClient.post('/api/v1/admin/premium/content', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000, // 10 minutes timeout for video/media upload
     }),
   updateContent: (id, formData) =>
     axiosClient.put(`/api/v1/admin/premium/content/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000, // 10 minutes timeout for video/media upload
     }),
   deleteContent: (id) => axiosClient.delete(`/api/v1/admin/premium/content/${id}`),
   publishContent: (id) => axiosClient.post(`/api/v1/admin/premium/content/${id}/publish`),
   unpublishContent: (id) => axiosClient.post(`/api/v1/admin/premium/content/${id}/unpublish`),
+
 
   // Member Management
   getMembers: (params) => axiosClient.get('/api/v1/admin/premium/members', { params }),

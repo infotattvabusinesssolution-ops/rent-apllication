@@ -187,6 +187,8 @@ const createPremiumContent = async (req, res) => {
 
     const contentId = await generateContentId();
 
+    const isPremiumBool = premiumOnly !== undefined ? (premiumOnly === 'true' || premiumOnly === true) : true;
+
     const newContent = await PremiumContent.create({
       contentId,
       contentType,
@@ -198,7 +200,7 @@ const createPremiumContent = async (req, res) => {
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
       status: status || 'DRAFT',
-      premiumOnly: premiumOnly !== undefined ? Boolean(premiumOnly) : true,
+      premiumOnly: isPremiumBool,
       createdBy: req.admin?.adminId || 'ADMIN',
     });
 
@@ -249,7 +251,7 @@ const updatePremiumContent = async (req, res) => {
     if (startDate !== undefined) item.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) item.endDate = endDate ? new Date(endDate) : null;
     if (status) item.status = status;
-    if (premiumOnly !== undefined) item.premiumOnly = Boolean(premiumOnly);
+    if (premiumOnly !== undefined) item.premiumOnly = (premiumOnly === 'true' || premiumOnly === true);
     if (thumbnailUrl !== undefined) item.thumbnailUrl = thumbnailUrl;
 
     if (req.file) {

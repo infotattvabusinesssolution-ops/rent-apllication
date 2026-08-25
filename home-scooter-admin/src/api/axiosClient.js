@@ -35,7 +35,7 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 120000, // 2 minutes default timeout for API requests
 });
 
 // Request Interceptor: Attach bearer token

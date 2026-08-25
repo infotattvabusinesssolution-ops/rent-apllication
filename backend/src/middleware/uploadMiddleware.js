@@ -36,14 +36,16 @@ const fileFilter = (req, file, cb) => {
 };
 
 const mediaFileFilter = (req, file, cb) => {
-  const allowedExts = /jpeg|jpg|png|gif|webp|mp4|webm|mov|avi|mkv/;
-  const extname = allowedExts.test(path.extname(file.originalname).toLowerCase());
+  const allowedExts = /jpeg|jpg|png|gif|webp|mp4|webm|mov|avi|mkv|3gp|m4v/;
+  const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+  const isAllowedExt = allowedExts.test(ext);
   const isAllowedMime =
+    !file.mimetype ||
     file.mimetype.startsWith('image/') ||
     file.mimetype.startsWith('video/') ||
     file.mimetype === 'application/octet-stream';
 
-  if (extname && isAllowedMime) {
+  if (isAllowedExt || isAllowedMime) {
     return cb(null, true);
   } else {
     cb(new Error('Only image or video files (jpeg, png, mp4, webm, mov, etc.) are allowed!'));

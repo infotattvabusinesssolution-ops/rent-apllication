@@ -94,8 +94,13 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
       uploadOptions.timeout = 600000; // 10 minute timeout for large videos
     }
 
-    // 5. Execute Cloudinary SDK Upload
-    const result = await cloudinary.uploader.upload(uploadSource, uploadOptions);
+    // 5. Execute Cloudinary SDK Upload (upload_large for videos, upload for images)
+    let result = null;
+    if (isVideo) {
+      result = await cloudinary.uploader.upload_large(uploadSource, uploadOptions);
+    } else {
+      result = await cloudinary.uploader.upload(uploadSource, uploadOptions);
+    }
 
     const durationMs = Date.now() - startTime;
     if (result && result.secure_url) {

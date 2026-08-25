@@ -85,7 +85,10 @@ export const PremiumContentList = () => {
       resetForm();
       queryClient.invalidateQueries(['premiumAdminContent']);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to save content'),
+    onError: (err) => {
+      const errMsg = err.response?.data?.message || err.message || 'Failed to save content';
+      toast.error(errMsg);
+    },
   });
 
   const resetForm = () => {
