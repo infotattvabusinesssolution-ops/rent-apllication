@@ -201,10 +201,7 @@ const getPremiumContent = async (req, res) => {
 
     const query = {
       status: 'ACTIVE',
-      $and: [
-        { $or: [{ startDate: null }, { startDate: { $lte: now } }] },
-        { $or: [{ endDate: null }, { endDate: { $gte: now } }] },
-      ],
+      $or: [{ endDate: null }, { endDate: { $gte: now } }],
     };
 
     if (contentType && ['TEXT', 'BANNER', 'VIDEO'].includes(contentType)) {
