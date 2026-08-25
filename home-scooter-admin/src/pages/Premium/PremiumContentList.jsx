@@ -155,7 +155,12 @@ export const PremiumContentList = () => {
 
         // 1. Fetch signed upload params from backend
         const sigRes = await premiumAdminApi.getCloudinarySignature();
-        const { cloudName, apiKey, timestamp, folder, signature } = sigRes.data;
+        const sigData = sigRes?.data || sigRes;
+        const { cloudName, apiKey, timestamp, folder, signature } = sigData;
+
+        if (!cloudName || !signature) {
+          throw new Error('Failed to retrieve valid Cloudinary upload signature from backend');
+        }
 
         // 2. Build Cloudinary FormData
         const cloudinaryData = new FormData();
