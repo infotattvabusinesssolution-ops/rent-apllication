@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+const { notFound, multerErrorHandler, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
 
@@ -84,7 +84,9 @@ initLuckyDrawScheduler();
 
 
 // Error Middlewares
+app.use(multerErrorHandler);
 app.use(notFound);
 app.use(errorHandler);
 
 module.exports = app;
+

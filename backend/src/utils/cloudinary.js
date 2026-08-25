@@ -1,138 +1,128 @@
-const https = require('https');
-const crypto = require('crypto');
+const cloudinary = require('cloudinary').v2;
 const path = require('path');
 const fs = require('fs');
 
+// Configure Cloudinary SDK using Environment Variables with fallbacks
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dwmokcagc',
+  api_key: process.env.CLOUDINARY_API_KEY || '811782714826833',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'YaT7sDQ5TSUNH276l35lPYXp9fI',
+  secure: true,
+});
+
 /**
- * Uploads a file, buffer, or base64 string directly to Cloudinary CDN without storing locally
- * Supports both Image and Video uploads (auto-detects extension/resource_type)
+ * Uploads a file, buffer, or file path directly to Cloudinary CDN using Cloudinary SDK
  * @param {Object|String} fileInput - Multer file object, file path, or base64 data string
  * @param {String} folder - Target Cloudinary folder (default: 'homescooter_ads')
- * @param {String} customResourceType - Optional resource type ('image' or 'video')
+ * @param {String} customResourceType - Optional resource type ('image', 'video', or 'auto')
+ * @param {Object} options - Additional options ({ isPremium: boolean })
  * @returns {Promise<String>} - Secure Cloudinary CDN URL
  */
-const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customResourceType = null) => {
+const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customResourceType = null, options = {}) => {
   let tempFilePath = null;
+  let isCreatedTempFile = false;
+  const startTime = Date.now();
+
   try {
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dwmokcagc';
-    const apiKey = process.env.CLOUDINARY_API_KEY || '811782714826833';
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || 'YaT7sDQ5TSUNH276l35lPYXp9fI';
-
-    let fileBuffer = null;
-    let filename = `media_${Date.now()}.jpg`;
-
-    if (typeof fileInput === 'string' && fileInput.startsWith('data:')) {
-      const base64Data = fileInput.split(';base64,').pop();
-      fileBuffer = Buffer.from(base64Data, 'base64');
-    } else if (fileInput && fileInput.buffer) {
-      fileBuffer = fileInput.buffer;
-      filename = fileInput.originalname || filename;
-    } else if (fileInput && fileInput.path && fs.existsSync(fileInput.path)) {
-      tempFilePath = fileInput.path;
-      fileBuffer = fs.readFileSync(fileInput.path);
-      filename = fileInput.filename || path.basename(fileInput.path);
-    } else if (typeof fileInput === 'string' && (fileInput.startsWith('http://') || fileInput.startsWith('https://'))) {
+    // 1. Check if direct URL string is provided
+    if (typeof fileInput === 'string' && (fileInput.startsWith('http://') || fileInput.startsWith('https://'))) {
       return fileInput;
     }
 
-    if (!fileBuffer) {
+    let uploadSource = null;
+    let filename = `media_${Date.now()}`;
+    let fileSize = 0;
+
+    // 2. Resolve upload source from Multer file object or raw input
+    if (fileInput && fileInput.path && fs.existsSync(fileInput.path)) {
+      tempFilePath = fileInput.path;
+      uploadSource = tempFilePath;
+      filename = fileInput.filename || fileInput.originalname || path.basename(fileInput.path);
+      try {
+        const stats = fs.statSync(tempFilePath);
+        fileSize = stats.size;
+      } catch (e) {}
+    } else if (fileInput && fileInput.buffer) {
+      // Memory buffer input: write to temp file for chunked SDK upload
+      filename = fileInput.originalname || `media_${Date.now()}.jpg`;
+      const tempDir = path.join(__dirname, '../../uploads/temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      tempFilePath = path.join(tempDir, `temp_buf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}${path.extname(filename)}`);
+      fs.writeFileSync(tempFilePath, fileInput.buffer);
+      uploadSource = tempFilePath;
+      isCreatedTempFile = true;
+      fileSize = fileInput.buffer.length;
+    } else if (typeof fileInput === 'string' && (fileInput.startsWith('data:') || fs.existsSync(fileInput))) {
+      uploadSource = fileInput;
+      if (fs.existsSync(fileInput)) {
+        tempFilePath = fileInput;
+        try {
+          const stats = fs.statSync(fileInput);
+          fileSize = stats.size;
+        } catch (e) {}
+      }
+    }
+
+    if (!uploadSource) {
+      if (folder === 'homescooter_premium' || options.isPremium) {
+        throw new Error('No valid file or data payload provided for Cloudinary upload.');
+      }
       return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
     }
 
-    // Determine resource type: 'video' or 'image'
+    // 3. Determine resource type (video vs image)
     const ext = path.extname(filename).toLowerCase();
     const isVideo = customResourceType === 'video' || /mp4|webm|mov|avi|mkv/.test(ext);
-    const resourceType = isVideo ? 'video' : 'image';
-    const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
-    const uploadTimeoutMs = isVideo ? 120000 : 15000; // 120s for video, 15s for image
+    const resourceType = customResourceType || (isVideo ? 'video' : 'image');
+    const sizeMb = (fileSize / (1024 * 1024)).toFixed(2);
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-    const signature = crypto.createHash('sha1').update(signatureStr).digest('hex');
-    const boundary = '----CloudinaryFormBoundary' + Math.random().toString(16).substring(2);
+    console.log(`[Cloudinary Upload] Starting ${resourceType.toUpperCase()} upload | File: ${filename} | Size: ${sizeMb} MB | Folder: ${folder}`);
 
-    let postData = '';
-    postData += `--${boundary}\r\n`;
-    postData += `Content-Disposition: form-data; name="api_key"\r\n\r\n${apiKey}\r\n`;
-    postData += `--${boundary}\r\n`;
-    postData += `Content-Disposition: form-data; name="timestamp"\r\n\r\n${timestamp}\r\n`;
-    postData += `--${boundary}\r\n`;
-    postData += `Content-Disposition: form-data; name="signature"\r\n\r\n${signature}\r\n`;
-    postData += `--${boundary}\r\n`;
-    postData += `Content-Disposition: form-data; name="folder"\r\n\r\n${folder}\r\n`;
-    postData += `--${boundary}\r\n`;
-    postData += `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n`;
-    postData += `Content-Type: ${mimeType}\r\n\r\n`;
+    // 4. Configure SDK Upload Options (Chunked upload for large video files)
+    const uploadOptions = {
+      folder,
+      resource_type: resourceType,
+      use_filename: true,
+      unique_filename: true,
+      overwrite: false,
+    };
 
-    const footer = `\r\n--${boundary}--\r\n`;
-    const payloadBuffer = Buffer.concat([
-      Buffer.from(postData, 'utf8'),
-      fileBuffer,
-      Buffer.from(footer, 'utf8'),
-    ]);
-
-    const result = await new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        console.warn(`Cloudinary ${resourceType} upload timed out after ${uploadTimeoutMs}ms.`);
-        resolve(null);
-      }, uploadTimeoutMs);
-
-      const reqOptions = {
-        hostname: 'api.cloudinary.com',
-        path: `/v1_1/${cloudName}/${resourceType}/upload`,
-        method: 'POST',
-        headers: {
-          'Content-Type': `multipart/form-data; boundary=${boundary}`,
-          'Content-Length': payloadBuffer.length,
-        },
-      };
-
-      const req = https.request(reqOptions, (res) => {
-        let body = '';
-        res.on('data', (chunk) => (body += chunk));
-        res.on('end', () => {
-          clearTimeout(timer);
-          try {
-            const parsed = JSON.parse(body);
-            if (parsed && parsed.secure_url) {
-              console.log(`Cloudinary ${resourceType} upload successful: ${parsed.secure_url}`);
-              resolve(parsed.secure_url);
-            } else {
-              console.warn('Cloudinary upload response:', parsed.error?.message || body);
-              resolve(null);
-            }
-          } catch (e) {
-            resolve(null);
-          }
-        });
-      });
-
-      req.on('error', (err) => {
-        clearTimeout(timer);
-        console.error(`Cloudinary request error: ${err.message}`);
-        resolve(null);
-      });
-
-      req.write(payloadBuffer);
-      req.end();
-    });
-
-    // Clean up temporary disk file if one was used
-    if (tempFilePath) {
-      try {
-        fs.unlinkSync(tempFilePath);
-      } catch (e) {}
+    if (isVideo) {
+      uploadOptions.chunk_size = 6000000; // 6MB chunk size for video upload
+      uploadOptions.timeout = 600000; // 10 minute timeout for large videos
     }
 
-    return result || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
+    // 5. Execute Cloudinary SDK Upload
+    const result = await cloudinary.uploader.upload(uploadSource, uploadOptions);
+
+    const durationMs = Date.now() - startTime;
+    if (result && result.secure_url) {
+      console.log(`[Cloudinary Upload] Success | ${resourceType.toUpperCase()} | URL: ${result.secure_url} | Duration: ${durationMs}ms`);
+      return result.secure_url;
+    }
+
+    throw new Error('Cloudinary response did not contain a secure URL.');
   } catch (err) {
-    if (tempFilePath) {
+    const durationMs = Date.now() - startTime;
+    console.error(`[Cloudinary Upload Error] Duration: ${durationMs}ms | Error: ${err.message}`);
+
+    // For Premium content, throw explicit error rather than silently fallback
+    if (folder === 'homescooter_premium' || options.isPremium) {
+      throw new Error(`Cloudinary upload failed: ${err.message}`);
+    }
+
+    return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
+  } finally {
+    // Clean up temporary disk file if created or supplied via Multer diskStorage
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-      } catch (e) {}
+      } catch (unlinkErr) {
+        console.warn(`[Cloudinary Cleanup Warning] Failed to delete temp file ${tempFilePath}: ${unlinkErr.message}`);
+      }
     }
-    console.error('Error in uploadToCloudinary:', err.message);
-    return 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800';
   }
 };
 
@@ -140,10 +130,11 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
  * Uploads a video directly to Cloudinary CDN in 'homescooter_premium' folder
  */
 const uploadVideoToCloudinary = async (fileInput, folder = 'homescooter_premium') => {
-  return uploadToCloudinary(fileInput, folder, 'video');
+  return uploadToCloudinary(fileInput, folder, 'video', { isPremium: true });
 };
 
 module.exports = {
   uploadToCloudinary,
   uploadVideoToCloudinary,
 };
+

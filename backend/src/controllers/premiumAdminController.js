@@ -1,3 +1,4 @@
+const fs = require('fs');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const PremiumMember = require('../models/PremiumMember');
@@ -150,9 +151,11 @@ const createPremiumContent = async (req, res) => {
     const { contentType, title, description, displayOrder, startDate, endDate, status, premiumOnly } = req.body;
 
     if (!contentType || !['TEXT', 'BANNER', 'VIDEO'].includes(contentType)) {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'Valid content type (TEXT, BANNER, VIDEO) is required' });
     }
     if (!title || !title.trim()) {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(400).json({ success: false, message: 'Content title is required' });
     }
 
@@ -165,7 +168,8 @@ const createPremiumContent = async (req, res) => {
       mediaUrl = await uploadToCloudinary(
         req.file,
         'homescooter_premium',
-        isVideo ? 'video' : 'image'
+        isVideo ? 'video' : 'image',
+        { isPremium: true }
       );
     }
 
@@ -204,6 +208,9 @@ const createPremiumContent = async (req, res) => {
       message: `${contentType} content created successfully`,
     });
   } catch (error) {
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -230,6 +237,7 @@ const updatePremiumContent = async (req, res) => {
   try {
     const item = await PremiumContent.findOne(buildIdQuery('contentId', req.params.id));
     if (!item) {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       return res.status(404).json({ success: false, message: 'Premium Content not found' });
     }
 
@@ -249,7 +257,8 @@ const updatePremiumContent = async (req, res) => {
       item.mediaUrl = await uploadToCloudinary(
         req.file,
         'homescooter_premium',
-        isVideo ? 'video' : 'image'
+        isVideo ? 'video' : 'image',
+        { isPremium: true }
       );
     } else if (req.body.mediaUrl) {
       item.mediaUrl = req.body.mediaUrl;
@@ -258,9 +267,13 @@ const updatePremiumContent = async (req, res) => {
     await item.save();
     return res.json({ success: true, data: item, message: 'Content updated successfully' });
   } catch (error) {
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // @desc    Delete Premium Content
 // @route   DELETE /api/v1/admin/premium/content/:id
