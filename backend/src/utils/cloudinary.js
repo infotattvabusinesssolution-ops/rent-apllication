@@ -94,13 +94,28 @@ const uploadToCloudinary = async (fileInput, folder = 'homescooter_ads', customR
       uploadOptions.timeout = 600000; // 10 minute timeout for large videos
     }
 
-    // 5. Execute Cloudinary SDK Upload (upload_large for videos, upload for images)
-    let result = null;
-    if (isVideo) {
-      result = await cloudinary.uploader.upload_large(uploadSource, uploadOptions);
-    } else {
-      result = await cloudinary.uploader.upload(uploadSource, uploadOptions);
-    }
+    // 5. Execute Cloudinary SDK Upload with explicit Callback Promisification
+    const result = await new Promise((resolve, reject) => {
+      const cb = (error, res) => {
+        if (error) {
+          return reject(new Error(error.message || (typeof error === 'string' ? error : JSON.stringify(error))));
+        }
+        if (!res || !res.secure_url) {
+          return reject(new Error('Cloudinary response did not contain a secure_url field.'));
+        }
+        resolve(res);
+      };
+
+      try {
+        if (isVideo) {
+          cloudinary.uploader.upload_large(uploadSource, cb, uploadOptions);
+        } else {
+          cloudinary.uploader.upload(uploadSource, uploadOptions, cb);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
 
     const durationMs = Date.now() - startTime;
     if (result && result.secure_url) {
