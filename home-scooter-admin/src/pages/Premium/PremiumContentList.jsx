@@ -19,10 +19,17 @@ import {
   Upload,
 } from 'lucide-react';
 
-// Helper for Direct Browser-to-Cloudinary Chunked Upload (for files > 90MB up to 2GB)
+// Helper for Direct Browser-to-Cloudinary Chunked Upload (for files up to 500MB)
 const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
-  const { cloudName, apiKey, timestamp, folder, signature } = sigData;
+  const { cloudName, apiKey, timestamp, folder, signature, publicId } = sigData;
   const totalSize = file.size;
+
+  // 1. Strict 500 MB Maximum Size Limit Validation
+  const maxSizeBytes = 500 * 1024 * 1024; // 500MB limit
+  if (totalSize > maxSizeBytes) {
+    throw new Error(`File size (${(totalSize / (1024 * 1024)).toFixed(2)} MB) exceeds the maximum allowed limit of 500 MB.`);
+  }
+
   const chunkSize = 6 * 1024 * 1024; // 6MB per chunk
   const ext = file.name.split('.').pop().toLowerCase();
   const isVideo = /mp4|webm|mov|avi|mkv|3gp|m4v/.test(ext);
@@ -36,6 +43,7 @@ const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
     formData.append('timestamp', timestamp);
     formData.append('signature', signature);
     formData.append('folder', folder);
+    if (publicId) formData.append('public_id', publicId);
 
     try {
       const res = await axios.post(
@@ -51,12 +59,12 @@ const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
       );
       return res.data;
     } catch (err) {
-      const cloudError = err.response?.data?.error?.message || err.message || 'Cloudinary upload failed';
+      const cloudError = err.response?.data?.error?.message || err.message || 'Cloudinary single upload failed';
       throw new Error(`Cloudinary Upload Error: ${cloudError}`);
     }
   }
 
-  // Large files (>= 90MB, e.g. 123MB) use Cloudinary's official Chunked Upload API
+  // Large files (>= 90MB up to 500MB) use Cloudinary's Chunked Upload API with signed public_id
   const uniqueUploadId = `uk_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   let start = 0;
   let finalResult = null;
@@ -66,11 +74,12 @@ const uploadFileToCloudinaryInChunks = async (file, sigData, onProgress) => {
     const chunk = file.slice(start, end);
 
     const formData = new FormData();
-    formData.append('file', chunk, file.name); // Crucial file.name 3rd argument for Blob slices
+    formData.append('file', chunk, file.name); // Crucial file.name 3rd argument
     formData.append('api_key', apiKey);
     formData.append('timestamp', timestamp);
     formData.append('signature', signature);
     formData.append('folder', folder);
+    if (publicId) formData.append('public_id', publicId);
 
     const contentRange = `bytes ${start}-${end - 1}/${totalSize}`;
 
@@ -232,11 +241,18 @@ export const PremiumContentList = () => {
     try {
       // Direct Client Upload to Cloudinary CDN if a file is selected
       if (selectedFile) {
+        // Validate 500 MB limit before upload starts
+        if (selectedFile.size > 500 * 1024 * 1024) {
+          toast.error(`File size (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB) exceeds the maximum 500 MB limit.`);
+          return;
+        }
+
         setIsUploadingDirect(true);
         setUploadProgress(0);
 
-        // 1. Fetch signed upload params from backend
-        const sigRes = await premiumAdminApi.getCloudinarySignature();
+        // 1. Generate unique public_id and fetch signed upload params
+        const publicId = `media_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const sigRes = await premiumAdminApi.getCloudinarySignature({ public_id: publicId });
         const sigData = sigRes?.data || sigRes;
 
         if (!sigData || (!sigData.cloudName && !sigData.data?.cloudName)) {
@@ -257,7 +273,7 @@ export const PremiumContentList = () => {
         }
       }
 
-      // 3. Send light JSON metadata payload to backend API
+      // 3. Send lightweight text/JSON metadata payload to backend API (file bytes NOT attached)
       const payload = new FormData();
       payload.append('contentType', formData.contentType);
       payload.append('title', formData.title);
@@ -272,7 +288,7 @@ export const PremiumContentList = () => {
 
       saveMutation.mutate(payload);
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || err.message || 'Direct Cloudinary Upload Failed');
+      toast.error(err.message || 'Direct Cloudinary Upload Failed');
     } finally {
       setIsUploadingDirect(false);
     }

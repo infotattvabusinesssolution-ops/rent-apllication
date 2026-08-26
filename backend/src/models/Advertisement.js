@@ -58,11 +58,42 @@ const advertisementSchema = new mongoose.Schema(
     plotNumber: { type: String, default: null },
     facing: { type: String, default: null },
     bhk: { type: String, default: null },
+    bathrooms: { type: String, default: null },
     furnishing: { type: String, default: null },
-    amenities: [{ type: String }],
+    projectStatus: { type: String, default: null },
+    listedBy: { type: String, default: null },
+    superBuiltupArea: { type: String, default: null },
+    carpetArea: { type: String, default: null },
+    maintenanceMonthly: { type: String, default: null },
+    totalFloors: { type: String, default: null },
+    carParking: { type: String, default: null },
+    floorNo: { type: String, default: null },
+    washrooms: { type: String, default: null },
+    plotArea: { type: String, default: null },
+    length: { type: String, default: null },
+    breadth: { type: String, default: null },
+    type: { type: String, default: null },
+
+    // Bike / Vehicle Specific Metadata
+    brand: { type: String, default: null },
+    year: { type: String, default: null },
+    fuel: { type: String, default: null },
+    kmDriven: { type: String, default: null },
+    brandModel: { type: String, default: null },
     batteryRangeKm: { type: String, default: null },
     maxSpeed: { type: String, default: null },
-    brandModel: { type: String, default: null },
+
+    // Job Specific Metadata
+    positionType: { type: String, default: null },
+    salaryFrom: { type: String, default: null },
+    salaryTo: { type: String, default: null },
+    salaryPeriod: { type: String, default: null },
+
+    // Service Specific Metadata
+    serviceType: { type: String, default: null },
+
+    amenities: [{ type: String }],
+    specifications: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );

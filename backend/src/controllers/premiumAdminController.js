@@ -728,7 +728,16 @@ const getCloudinarySignature = async (req, res) => {
     const apiKey = process.env.CLOUDINARY_API_KEY || '811782714826833';
     const apiSecret = process.env.CLOUDINARY_API_SECRET || 'YaT7sDQ5TSUNH276l35lPYXp9fI';
 
-    const signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const publicId = req.query.public_id || req.query.publicId || req.body.public_id || req.body.publicId || null;
+
+    let signatureStr = '';
+    if (publicId) {
+      // Strictly sorted parameter order: folder, public_id, timestamp
+      signatureStr = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    } else {
+      signatureStr = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    }
+
     const signature = crypto.createHash('sha1').update(signatureStr).digest('hex');
 
     return res.json({
@@ -737,6 +746,7 @@ const getCloudinarySignature = async (req, res) => {
       apiKey,
       timestamp,
       folder,
+      publicId,
       signature,
     });
   } catch (error) {

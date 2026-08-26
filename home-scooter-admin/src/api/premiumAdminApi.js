@@ -3,7 +3,7 @@ import axiosClient from './axiosClient';
 export const premiumAdminApi = {
   // Dashboard Stats & Signature
   getDashboardStats: () => axiosClient.get('/api/v1/admin/premium/dashboard'),
-  getCloudinarySignature: () => axiosClient.get('/api/v1/admin/premium/cloudinary-signature'),
+  getCloudinarySignature: (params) => axiosClient.get('/api/v1/admin/premium/cloudinary-signature', { params }),
 
   // Content Management
   getContentList: (params) => axiosClient.get('/api/v1/admin/premium/content', { params }),

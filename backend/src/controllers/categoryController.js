@@ -2,16 +2,66 @@ const Category = require('../models/Category');
 
 // Default Seed Categories
 const DEFAULT_CATEGORIES = [
-  { name: 'Layout Sites', parent: 'None (Main Category)', description: 'Plots, Land & Gated Sites', icon: '🗺️' },
-  { name: 'Rent: House & Apartments', parent: 'Properties', description: 'Rental houses, flats & apartments', icon: '🏠' },
-  { name: 'Rent: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for rent', icon: '🏬' },
-  { name: 'Sale: House & Apartments', parent: 'Properties', description: 'Houses, flats & villas for purchase', icon: '🏡' },
-  { name: 'Sale: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for sale', icon: '🏢' },
-  { name: 'PG & Guest House', parent: 'Properties', description: 'Paying guest accommodations', icon: '🛏️' },
-  { name: 'Properties', parent: 'None (Main Category)', description: 'Rent & Sale Houses, Shops & PGs', icon: '🏢' },
-  { name: 'Electric Scooters', parent: 'None (Main Category)', description: 'Daily & Monthly EV Rentals', icon: '🛵' },
-  { name: 'Services', parent: 'None (Main Category)', description: 'Interiors, Maintenance & Repairs', icon: '🛠️' },
-  { name: 'Others', parent: 'None (Main Category)', description: 'Miscellaneous & Partner Ads', icon: '📦' },
+  { 
+    name: 'Properties', 
+    parent: 'None (Main Category)', 
+    subCategories: ['Rent: House & Apartments', 'Rent: Shop & Offices', 'Sale: House & Apartments', 'Sale: Shop & Offices', 'Lands & Plots', 'PG & Guest House'],
+    description: 'Rent & Sale Houses, Shops, Lands & PGs', 
+    icon: '🏢', 
+    schemaType: 'PROPERTIES' 
+  },
+  { name: 'Rent: House & Apartments', parent: 'Properties', description: 'Rental houses, flats & apartments', icon: '🏠', schemaType: 'PROPERTIES_HOUSES' },
+  { name: 'Rent: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for rent', icon: '🏬', schemaType: 'PROPERTIES_SHOPS' },
+  { name: 'Sale: House & Apartments', parent: 'Properties', description: 'Houses, flats & villas for purchase', icon: '🏡', schemaType: 'PROPERTIES_HOUSES' },
+  { name: 'Sale: Shop & Offices', parent: 'Properties', description: 'Commercial shops & offices for sale', icon: '🏢', schemaType: 'PROPERTIES_SHOPS' },
+  { name: 'Lands & Plots', parent: 'Properties', description: 'Plots, agricultural & commercial land', icon: '🗺️', schemaType: 'PROPERTIES_LANDS' },
+  { name: 'PG & Guest House', parent: 'Properties', description: 'Paying guest accommodations & hostels', icon: '🛏️', schemaType: 'PROPERTIES_HOUSES' },
+  
+  { 
+    name: 'Bikes', 
+    parent: 'None (Main Category)', 
+    subCategories: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'],
+    description: 'Motorcycles, Scooters, Bicycles & Parts', 
+    icon: '🏍️', 
+    schemaType: 'BIKES' 
+  },
+  { name: 'Motorcycles', parent: 'Bikes', description: 'Bikes, gear & heavy motorcycles', icon: '🏍️', schemaType: 'BIKES_VEHICLE' },
+  { name: 'Scooters', parent: 'Bikes', description: 'Scoooters & gearless two-wheelers', icon: '🛵', schemaType: 'BIKES_VEHICLE' },
+  { name: 'Spare Parts', parent: 'Bikes', description: 'Bike spare parts & accessories', icon: '⚙️', schemaType: 'BIKES_PARTS' },
+  { name: 'Bicycles', parent: 'Bikes', description: 'Bicycles, cycles & sports bikes', icon: '🚲', schemaType: 'BIKES_PARTS' },
+
+  { 
+    name: 'Jobs', 
+    parent: 'None (Main Category)', 
+    subCategories: ['BPO & Telecaller', 'Data Entry & Back Office', 'Sales & Marketing', 'Driver', 'Delivery & Collection', 'IT & Software'],
+    description: 'Full-time, Part-time, Telecaller & Back Office Jobs', 
+    icon: '💼', 
+    schemaType: 'JOBS' 
+  },
+  { name: 'BPO & Telecaller', parent: 'Jobs', description: 'Customer support, telecalling & inbound/outbound', icon: '🎧', schemaType: 'JOBS' },
+  { name: 'Data Entry & Back Office', parent: 'Jobs', description: 'Data entry operator, computer operator & back office', icon: '💻', schemaType: 'JOBS' },
+  { name: 'Sales & Marketing', parent: 'Jobs', description: 'Field sales, executive & digital marketing', icon: '📈', schemaType: 'JOBS' },
+  { name: 'Driver', parent: 'Jobs', description: 'Car drivers, commercial & cab drivers', icon: '🚗', schemaType: 'JOBS' },
+  { name: 'Delivery & Collection', parent: 'Jobs', description: 'Delivery boys, logistics & field operations', icon: '🛵', schemaType: 'JOBS' },
+  { name: 'IT & Software', parent: 'Jobs', description: 'Developers, IT support & web designers', icon: '💻', schemaType: 'JOBS' },
+
+  { 
+    name: 'Services', 
+    parent: 'None (Main Category)', 
+    subCategories: ['Electronics Repair & Services', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Packers & Movers', 'Legal & Documentation'],
+    description: 'Electronics, Maintenance, Repair & Home Services', 
+    icon: '🛠️', 
+    schemaType: 'SERVICES' 
+  },
+  { name: 'Electronics Repair & Services', parent: 'Services', description: 'AC, TV, Laptops, Appliances & Water Purifier Repair', icon: '💻', schemaType: 'SERVICES' },
+  { name: 'Home Renovation & Repair', parent: 'Services', description: 'Electricians, Plumbers, Painters & Carpenters', icon: '🛠️', schemaType: 'SERVICES' },
+  { name: 'Cleaning & Pest Control', parent: 'Services', description: 'Deep house cleaning, sofa, carpet & pest control', icon: '🧹', schemaType: 'SERVICES' },
+  { name: 'Packers & Movers', parent: 'Services', description: 'Household shifting, vehicle transport & logistics', icon: '📦', schemaType: 'SERVICES' },
+  { name: 'Legal & Documentation', parent: 'Services', description: 'Property verification, contracts & legal assistance', icon: '📄', schemaType: 'SERVICES' },
+
+  { name: 'Layout Sites', parent: 'None (Main Category)', subCategories: [], description: 'Plots, Land & Gated Sites', icon: '🗺️', schemaType: 'PROPERTIES_LANDS' },
+  { name: 'Electric Scooters', parent: 'None (Main Category)', subCategories: [], description: 'Daily & Monthly EV Rentals', icon: '🛵', schemaType: 'BIKES_VEHICLE' },
+  { name: 'Others', parent: 'None (Main Category)', description: 'Miscellaneous & Partner Ads', icon: '📦', schemaType: 'DEFAULT' },
 ];
 
 // @desc    Get all categories
@@ -31,9 +81,11 @@ const getCategories = async (req, res) => {
         id: c._id,
         name: c.name,
         parent: c.parent,
+        subCategories: c.subCategories || [],
         description: c.description,
         icon: c.icon,
         color: c.color,
+        schemaType: c.schemaType || 'DEFAULT',
         isActive: c.isActive,
       })),
     });
@@ -46,7 +98,7 @@ const getCategories = async (req, res) => {
 // @route   POST /api/v1/admin/categories
 const createCategory = async (req, res) => {
   try {
-    const { name, parent, description, icon, color, isActive } = req.body;
+    const { name, parent, subCategories, description, icon, color, schemaType, isActive } = req.body;
 
     if (!name) {
       return res.status(400).json({ success: false, message: 'Category name is required' });
@@ -60,9 +112,11 @@ const createCategory = async (req, res) => {
     const category = await Category.create({
       name,
       parent: parent || 'None (Main Category)',
+      subCategories: Array.isArray(subCategories) ? subCategories : [],
       description: description || '',
       icon: icon || '📦',
       color: color || 'bg-blue-100 text-blue-800 border-blue-200',
+      schemaType: schemaType || 'DEFAULT',
       isActive: isActive !== undefined ? isActive : true,
     });
 
@@ -74,9 +128,11 @@ const createCategory = async (req, res) => {
         _id: category._id,
         name: category.name,
         parent: category.parent,
+        subCategories: category.subCategories,
         description: category.description,
         icon: category.icon,
         color: category.color,
+        schemaType: category.schemaType,
         isActive: category.isActive,
       },
     });
@@ -90,7 +146,7 @@ const createCategory = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, parent, description, icon, color, isActive } = req.body;
+    const { name, parent, subCategories, description, icon, color, schemaType, isActive } = req.body;
 
     const category = await Category.findById(id);
     if (!category) {
@@ -99,9 +155,11 @@ const updateCategory = async (req, res) => {
 
     if (name) category.name = name;
     if (parent !== undefined) category.parent = parent;
+    if (subCategories !== undefined && Array.isArray(subCategories)) category.subCategories = subCategories;
     if (description !== undefined) category.description = description;
     if (icon !== undefined) category.icon = icon;
     if (color !== undefined) category.color = color;
+    if (schemaType !== undefined) category.schemaType = schemaType;
     if (isActive !== undefined) category.isActive = isActive;
 
     await category.save();
@@ -117,6 +175,7 @@ const updateCategory = async (req, res) => {
         description: category.description,
         icon: category.icon,
         color: category.color,
+        schemaType: category.schemaType,
         isActive: category.isActive,
       },
     });
@@ -150,6 +209,7 @@ const toggleCategoryStatus = async (req, res) => {
         description: category.description,
         icon: category.icon,
         color: category.color,
+        schemaType: category.schemaType,
         isActive: category.isActive,
       },
     });

@@ -251,38 +251,170 @@ export const AdDetail = () => {
                 )}
 
                 {/* Property Category Specifics */}
-                {ad.category === CATEGORIES.PROPERTIES && (
+                {(ad.category === CATEGORIES.PROPERTIES || ad.propertySubType?.includes('House') || ad.propertySubType?.includes('Apartment') || ad.propertySubType?.includes('Shop') || ad.propertySubType?.includes('Office') || ad.propertySubType?.includes('Lands') || ad.propertySubType?.includes('Plot')) && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
-                      <span className="text-[10px] font-bold text-teal-700 uppercase">BHK Layout</span>
-                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.bhk || 'N/A'}</p>
-                    </div>
-                    <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
-                      <span className="text-[10px] font-bold text-teal-700 uppercase">Furnishing</span>
-                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.furnishing || 'N/A'}</p>
-                    </div>
-                    <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
-                      <span className="text-[10px] font-bold text-teal-700 uppercase">Built-up Area</span>
-                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.dimensions || 'N/A'}</p>
-                    </div>
+                    {ad.bhk && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">BHK Layout</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.bhk}</p>
+                      </div>
+                    )}
+                    {ad.bathrooms && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Bathrooms</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.bathrooms}</p>
+                      </div>
+                    )}
+                    {ad.washrooms && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Washrooms</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.washrooms}</p>
+                      </div>
+                    )}
+                    {ad.furnishing && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Furnishing</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.furnishing}</p>
+                      </div>
+                    )}
+                    {ad.projectStatus && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Project Status</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.projectStatus}</p>
+                      </div>
+                    )}
+                    {ad.listedBy && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Listed By</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.listedBy}</p>
+                      </div>
+                    )}
+                    {ad.superBuiltupArea && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Super Builtup Area</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.superBuiltupArea} sq.ft</p>
+                      </div>
+                    )}
+                    {ad.carpetArea && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Carpet Area</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.carpetArea} sq.ft</p>
+                      </div>
+                    )}
+                    {ad.maintenanceMonthly && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Monthly Maint.</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">₹{ad.maintenanceMonthly}</p>
+                      </div>
+                    )}
+                    {ad.carParking && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Car Parking</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.carParking}</p>
+                      </div>
+                    )}
+                    {ad.plotArea && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Plot Area</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.plotArea} sq.ft</p>
+                      </div>
+                    )}
+                    {ad.facing && (
+                      <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                        <span className="text-[10px] font-bold text-teal-700 uppercase">Facing</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.facing}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Electric Scooter Specifics */}
-                {ad.category === CATEGORIES.ELECTRIC_SCOOTERS && (
+                {/* Bike & Vehicle Specifics */}
+                {(ad.category === CATEGORIES.BIKES || ad.category === CATEGORIES.ELECTRIC_SCOOTERS || ad.brand || ad.year || ad.kmDriven) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {ad.brand && (
+                      <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <span className="text-[10px] font-bold text-blue-700 uppercase">Brand</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.brand}</p>
+                      </div>
+                    )}
+                    {ad.year && (
+                      <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <span className="text-[10px] font-bold text-blue-700 uppercase">Registration Year</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.year}</p>
+                      </div>
+                    )}
+                    {ad.fuel && (
+                      <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <span className="text-[10px] font-bold text-blue-700 uppercase">Fuel Type</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.fuel}</p>
+                      </div>
+                    )}
+                    {ad.kmDriven && (
+                      <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <span className="text-[10px] font-bold text-blue-700 uppercase">KM Driven</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.kmDriven} km</p>
+                      </div>
+                    )}
+                    {ad.brandModel && !ad.brand && (
+                      <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                        <span className="text-[10px] font-bold text-blue-700 uppercase">Brand & Model</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.brandModel}</p>
+                      </div>
+                    )}
+                    {ad.batteryRangeKm && (
+                      <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase">Battery Range</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.batteryRangeKm} km</p>
+                      </div>
+                    )}
+                    {ad.maxSpeed && (
+                      <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase">Top Speed</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.maxSpeed}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Job Specifics */}
+                {(ad.category === 'Jobs' || ad.positionType || ad.salaryFrom || ad.salaryPeriod) && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                      <span className="text-[10px] font-bold text-emerald-700 uppercase">Brand & Model</span>
-                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.brandModel || 'N/A'}</p>
+                    {ad.positionType && (
+                      <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
+                        <span className="text-[10px] font-bold text-purple-700 uppercase">Position Type</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.positionType}</p>
+                      </div>
+                    )}
+                    {(ad.salaryFrom || ad.salaryTo) && (
+                      <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
+                        <span className="text-[10px] font-bold text-purple-700 uppercase">Salary Range</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">
+                          ₹{ad.salaryFrom || '0'} - ₹{ad.salaryTo || '0'}
+                        </p>
+                      </div>
+                    )}
+                    {ad.salaryPeriod && (
+                      <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100">
+                        <span className="text-[10px] font-bold text-purple-700 uppercase">Salary Period</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.salaryPeriod}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Service Specifics */}
+                {(ad.category === 'Services' || ad.serviceType || ad.propertySubType?.includes('Repair') || ad.propertySubType?.includes('Services')) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                      <span className="text-[10px] font-bold text-indigo-700 uppercase">Service Category</span>
+                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.propertySubType || ad.category || 'Services'}</p>
                     </div>
-                    <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                      <span className="text-[10px] font-bold text-emerald-700 uppercase">Battery Range</span>
-                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.batteryRangeKm || 'N/A'}</p>
-                    </div>
-                    <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                      <span className="text-[10px] font-bold text-emerald-700 uppercase">Top Speed</span>
-                      <p className="text-xs font-bold text-slate-800 mt-1">{ad.maxSpeed || 'N/A'}</p>
-                    </div>
+                    {(ad.serviceType || ad.type) && (
+                      <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                        <span className="text-[10px] font-bold text-indigo-700 uppercase">Service Type</span>
+                        <p className="text-xs font-bold text-slate-800 mt-1">{ad.serviceType || ad.type}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

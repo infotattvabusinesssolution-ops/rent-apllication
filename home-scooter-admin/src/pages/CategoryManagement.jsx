@@ -40,7 +40,9 @@ export const CategoryManagement = () => {
     queryFn: categoriesApi.getCategories,
   });
 
-  const categoriesList = Array.isArray(apiResult?.data)
+  const categoriesList = Array.isArray(apiResult?.data?.data)
+    ? apiResult.data.data
+    : Array.isArray(apiResult?.data)
     ? apiResult.data
     : Array.isArray(apiResult)
     ? apiResult
@@ -63,6 +65,7 @@ export const CategoryManagement = () => {
       toast.success(data?.message || 'New category created & saved in backend database!');
       setModalOpen(false);
       queryClient.invalidateQueries(['adminCategories']);
+      queryClient.invalidateQueries(['userCategories']);
     },
     onError: (error) => {
       const msg = error?.response?.data?.message || error.message || 'Failed to create category';
@@ -76,6 +79,7 @@ export const CategoryManagement = () => {
       toast.success(data?.message || 'Category updated successfully!');
       setModalOpen(false);
       queryClient.invalidateQueries(['adminCategories']);
+      queryClient.invalidateQueries(['userCategories']);
     },
     onError: (error) => {
       const msg = error?.response?.data?.message || error.message || 'Failed to update category';
@@ -88,6 +92,7 @@ export const CategoryManagement = () => {
     onSuccess: (data) => {
       toast.success(data?.message || 'Category status updated');
       queryClient.invalidateQueries(['adminCategories']);
+      queryClient.invalidateQueries(['userCategories']);
     },
     onError: (error) => {
       const msg = error?.response?.data?.message || error.message || 'Failed to toggle status';
@@ -101,6 +106,7 @@ export const CategoryManagement = () => {
       toast.success(data?.message || 'Category deleted successfully');
       setDeletingId(null);
       queryClient.invalidateQueries(['adminCategories']);
+      queryClient.invalidateQueries(['userCategories']);
     },
     onError: (error) => {
       const msg = error?.response?.data?.message || error.message || 'Failed to delete category';
@@ -114,8 +120,10 @@ export const CategoryManagement = () => {
     setFormData({
       name: '',
       parent: 'None (Main Category)',
+      subCategories: [],
       description: '',
       icon: '✨',
+      schemaType: 'DEFAULT',
       isActive: true,
     });
     setModalOpen(true);
@@ -126,12 +134,45 @@ export const CategoryManagement = () => {
     setFormData({
       name: cat.name,
       parent: cat.parent,
+      subCategories: cat.subCategories || (cat.parent && cat.parent !== 'None (Main Category)' ? [cat.parent] : []),
       description: cat.description,
       icon: cat.icon,
+      schemaType: cat.schemaType || 'DEFAULT',
       isActive: cat.isActive,
     });
     setModalOpen(true);
   };
+
+  // Get dynamic main categories and subcategories from database list for Parent Category selection
+  const dynamicMainCategoryOptions = Array.from(
+    new Set([
+      'None (Main Category)',
+      'Properties',
+      'Rent: House & Apartments',
+      'Rent: Shop & Offices',
+      'Sale: House & Apartments',
+      'Sale: Shop & Offices',
+      'Lands & Plots',
+      'PG & Guest House',
+      'Bikes',
+      'Motorcycles',
+      'Scooters',
+      'Spare Parts',
+      'Bicycles',
+      'Jobs',
+      'BPO & Telecaller',
+      'Data Entry & Back Office',
+      'Sales & Marketing',
+      'Driver',
+      'Delivery & Collection',
+      'IT & Software',
+      'Layout Sites',
+      'Electric Scooters',
+      'Services',
+      'Others',
+      ...categoriesList.map((c) => c.name),
+    ])
+  );
 
   const handleSaveCategory = (e) => {
     e.preventDefault();
@@ -154,6 +195,9 @@ export const CategoryManagement = () => {
 
     if (filterType === 'MAIN') return matchesSearch && cat.parent === 'None (Main Category)';
     if (filterType === 'PROPERTIES') return matchesSearch && cat.parent === 'Properties';
+    if (filterType === 'BIKES') return matchesSearch && cat.parent === 'Bikes';
+    if (filterType === 'JOBS') return matchesSearch && cat.parent === 'Jobs';
+    if (filterType === 'SERVICES') return matchesSearch && cat.parent === 'Services';
     return matchesSearch;
   });
 
@@ -195,18 +239,20 @@ export const CategoryManagement = () => {
 
         <Card>
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Active Status
+            Bike & Job Subcategories
           </span>
-          <p className="text-2xl font-black text-emerald-600 mt-1">
-            {categoriesList.filter((c) => c.isActive).length} / {categoriesList.length} Active
+          <p className="text-2xl font-black text-slate-900 mt-1">
+            {categoriesList.filter((c) => c.parent === 'Bikes' || c.parent === 'Jobs').length}
           </p>
         </Card>
 
         <Card>
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Backend Sync Status
+            Active Status
           </span>
-          <p className="text-xs font-bold text-blue-600 mt-2">MongoDB REST API Connected ✓</p>
+          <p className="text-2xl font-black text-emerald-600 mt-1">
+            {categoriesList.filter((c) => c.isActive).length} / {categoriesList.length} Active
+          </p>
         </Card>
       </div>
 
@@ -228,6 +274,9 @@ export const CategoryManagement = () => {
             <option value="ALL">All Categories ({categoriesList.length})</option>
             <option value="MAIN">Main Categories Only</option>
             <option value="PROPERTIES">Property Subcategories</option>
+            <option value="BIKES">Bike Subcategories</option>
+            <option value="JOBS">Job Subcategories</option>
+            <option value="SERVICES">Service Subcategories</option>
           </select>
         </div>
       </div>
@@ -252,8 +301,8 @@ export const CategoryManagement = () => {
                     <h3 className="font-bold text-slate-900 text-sm leading-tight">
                       {cat.name}
                     </h3>
-                    <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">
-                      Parent: {cat.parent}
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 block mt-1 w-fit">
+                      Sub Categories: {cat.subCategories && cat.subCategories.length > 0 ? cat.subCategories.join(', ') : cat.parent || 'None (Main Category)'}
                     </span>
                   </div>
                 </div>
@@ -329,22 +378,96 @@ export const CategoryManagement = () => {
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all"
                 required
               />
+              <p className="text-[11px] font-medium text-blue-600 mt-1 flex items-center gap-1">
+                Selected Sub Categories: <span className="font-bold text-slate-900">{formData.subCategories?.length > 0 ? formData.subCategories.join(', ') : formData.parent || 'None (Main Category)'}</span>
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Select Sub Categories ({formData.subCategories?.length || 0} Selected)
+                </label>
+                <span className="text-[10px] font-bold text-blue-600">Select multiple subcategories</span>
+              </div>
+
+              {/* Subcategories Multi-select checkbox grid */}
+              <div className="max-h-48 overflow-y-auto p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 scrollbar-thin">
+                {/* None Option */}
+                <div
+                  onClick={() => {
+                    setFormData({ ...formData, parent: 'None (Main Category)', subCategories: [] });
+                  }}
+                  className={`p-2.5 rounded-lg border text-xs font-bold cursor-pointer transition-all flex items-center justify-between ${
+                    (!formData.subCategories || formData.subCategories.length === 0) && (formData.parent === 'None (Main Category)' || !formData.parent)
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <span>None (Main Category - No Subcategories)</span>
+                  {(!formData.subCategories || formData.subCategories.length === 0) && (formData.parent === 'None (Main Category)' || !formData.parent) && <span>✓</span>}
+                </div>
+
+                {/* Subcategory list pills */}
+                {dynamicMainCategoryOptions
+                  .filter((opt) => opt !== 'None (Main Category)' && opt !== formData.name)
+                  .map((opt) => {
+                    const isSelected = Array.isArray(formData.subCategories) && formData.subCategories.includes(opt);
+                    return (
+                      <div
+                        key={opt}
+                        onClick={() => {
+                          const current = Array.isArray(formData.subCategories) ? formData.subCategories : [];
+                          let updated;
+                          if (isSelected) {
+                            updated = current.filter((item) => item !== opt);
+                          } else {
+                            updated = [...current, opt];
+                          }
+                          setFormData({
+                            ...formData,
+                            parent: updated.length > 0 ? updated[0] : 'None (Main Category)',
+                            subCategories: updated,
+                          });
+                        }}
+                        className={`p-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-blue-50 text-blue-700 border-blue-300 font-bold'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span>{opt}</span>
+                        </div>
+                        {isSelected && <span className="text-blue-600 font-bold">✓</span>}
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Parent Category
+                Form Schema Type
               </label>
               <select
-                value={formData.parent}
-                onChange={(e) => setFormData({ ...formData, parent: e.target.value })}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all cursor-pointer"
+                value={formData.schemaType || 'DEFAULT'}
+                onChange={(e) => setFormData({ ...formData, schemaType: e.target.value })}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition-all cursor-pointer font-serif"
               >
-                <option value="None (Main Category)">None (Main Category)</option>
-                <option value="Properties">Properties</option>
-                <option value="Layout Sites">Layout Sites</option>
-                <option value="Electric Scooters">Electric Scooters</option>
-                <option value="Services">Services</option>
+                <option value="PROPERTIES_HOUSES">Properties: Houses & Apartments Form</option>
+                <option value="PROPERTIES_SHOPS">Properties: Shops & Offices Form</option>
+                <option value="PROPERTIES_LANDS">Properties: Lands & Plots Form</option>
+                <option value="BIKES_VEHICLE">Bikes & Vehicles Form</option>
+                <option value="BIKES_PARTS">Spare Parts & Bicycles Form</option>
+                <option value="JOBS">Jobs & Salary Form</option>
+                <option value="DEFAULT">Default Standard Form</option>
               </select>
             </div>
 

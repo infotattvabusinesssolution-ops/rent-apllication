@@ -314,40 +314,112 @@ export const AdDetail = () => {
         </span>
       </div>
 
-      {/* Plot & Site Specifications */}
+      {/* Item Overview & Specifications */}
       <div className="space-y-3">
         <h3 className="font-serif font-bold text-slate-900 text-lg">
-          Plot & Site Specifications
+          {ad.category === 'Bikes' || ad.brand ? 'Vehicle Specifications' : ad.category === 'Jobs' || ad.positionType ? 'Job Details & Salary' : 'Item Overview & Specifications'}
         </h3>
 
-        <div className="grid grid-cols-3 gap-3">
-          {/* Box 1: Dimensions */}
-          <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
-            <Ruler className="w-5 h-5 text-blue-600 stroke-[1.8]" />
-            <span className="text-slate-400 text-[11px] font-light font-serif block">Dimensions</span>
-            <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
-              {ad.dimensions || '20x40, 3...'}
-            </span>
+        {/* Job Specifications Grid */}
+        {(ad.category === 'Jobs' || ad.positionType || ad.salaryFrom || ad.salaryPeriod) ? (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <span className="text-slate-400 text-[11px] font-light font-serif block">Position Type</span>
+              <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                {ad.positionType || 'Full-time'}
+              </span>
+            </div>
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <span className="text-slate-400 text-[11px] font-light font-serif block">Salary Range</span>
+              <span className="font-serif font-bold text-emerald-600 text-xs sm:text-sm block truncate">
+                ₹{ad.salaryFrom || '0'} - ₹{ad.salaryTo || '0'}
+              </span>
+            </div>
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <span className="text-slate-400 text-[11px] font-light font-serif block">Salary Period</span>
+              <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                {ad.salaryPeriod || 'Monthly'}
+              </span>
+            </div>
           </div>
+        ) : (ad.category === 'Services' || ad.serviceType || ad.propertySubType?.includes('Repair') || ad.propertySubType?.includes('Services')) ? (
+          /* Service Specifications Grid */
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <span className="text-slate-400 text-[11px] font-light font-serif block">Service Category</span>
+              <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                {ad.propertySubType || ad.category || 'Services'}
+              </span>
+            </div>
+            {(ad.serviceType || ad.type) && (
+              <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+                <span className="text-slate-400 text-[11px] font-light font-serif block">Service Type</span>
+                <span className="font-serif font-bold text-blue-700 text-xs sm:text-sm block truncate">
+                  {ad.serviceType || ad.type}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (ad.category === 'Bikes' || ad.brand || ad.year || ad.kmDriven) ? (
+          /* Bike / Vehicle Specifications Grid */
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {ad.brand && (
+              <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3 space-y-1">
+                <span className="text-slate-400 text-[11px] font-light block">Brand</span>
+                <span className="font-bold text-slate-900 text-xs sm:text-sm block truncate">{ad.brand}</span>
+              </div>
+            )}
+            {ad.year && (
+              <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3 space-y-1">
+                <span className="text-slate-400 text-[11px] font-light block">Model Year</span>
+                <span className="font-bold text-slate-900 text-xs sm:text-sm block truncate">{ad.year}</span>
+              </div>
+            )}
+            {ad.fuel && (
+              <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3 space-y-1">
+                <span className="text-slate-400 text-[11px] font-light block">Fuel Type</span>
+                <span className="font-bold text-slate-900 text-xs sm:text-sm block truncate">{ad.fuel}</span>
+              </div>
+            )}
+            {ad.kmDriven && (
+              <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3 space-y-1">
+                <span className="text-slate-400 text-[11px] font-light block">KM Driven</span>
+                <span className="font-bold text-slate-900 text-xs sm:text-sm block truncate">{ad.kmDriven} km</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Property Specifications Grid */
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <Ruler className="w-5 h-5 text-blue-600 stroke-[1.8]" />
+              <span className="text-slate-400 text-[11px] font-light font-serif block">
+                {ad.bhk ? 'BHK / Area' : 'Dimensions'}
+              </span>
+              <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                {ad.bhk || ad.dimensions || ad.superBuiltupArea || ad.plotArea || 'N/A'}
+              </span>
+            </div>
 
-          {/* Box 2: Plot No */}
-          <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
-            <Hash className="w-5 h-5 text-blue-600 stroke-[1.8]" />
-            <span className="text-slate-400 text-[11px] font-light font-serif block">Plot No.</span>
-            <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
-              {ad.plotNumber || 'MUDA A...'}
-            </span>
-          </div>
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <Hash className="w-5 h-5 text-blue-600 stroke-[1.8]" />
+              <span className="text-slate-400 text-[11px] font-light font-serif block">
+                {ad.furnishing ? 'Furnishing' : 'Listed By'}
+              </span>
+              <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                {ad.furnishing || ad.listedBy || ad.plotNumber || 'Owner'}
+              </span>
+            </div>
 
-          {/* Box 3: Facing */}
-          <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
-            <Compass className="w-5 h-5 text-blue-600 stroke-[1.8]" />
-            <span className="text-slate-400 text-[11px] font-light font-serif block">Facing</span>
-            <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
-              {ad.facing || 'East / No...'}
-            </span>
+            <div className="bg-[#f8fafc] border border-slate-100 rounded-2xl p-3.5 space-y-1">
+              <Compass className="w-5 h-5 text-blue-600 stroke-[1.8]" />
+              <span className="text-slate-400 text-[11px] font-light font-serif block">Facing</span>
+              <span className="font-serif font-bold text-slate-900 text-xs sm:text-sm block truncate">
+                {ad.facing || 'East'}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Description Section */}

@@ -147,11 +147,20 @@ const postAd = async (req, res) => {
     }
 
     let mainCategory = category || 'Layout Sites';
-    let propertySubType = null;
+    let propertySubType = req.body.propertySubType || null;
 
-    if (category && (category.startsWith('Rent:') || category.startsWith('Sale:') || category.startsWith('PG'))) {
+    if (category && (category.startsWith('Rent:') || category.startsWith('Sale:') || category.startsWith('PG') || category === 'Lands & Plots')) {
       propertySubType = category;
       mainCategory = 'Properties';
+    } else if (category && (category === 'Motorcycles' || category === 'Scooters' || category === 'Spare Parts' || category === 'Bicycles' || category === 'Bikes')) {
+      propertySubType = category === 'Bikes' ? null : category;
+      mainCategory = 'Bikes';
+    } else if (category && (category === 'Jobs' || category === 'BPO & Telecaller' || category === 'Data Entry & Back Office' || category === 'Sales & Marketing' || category === 'Driver' || category === 'Delivery & Collection' || category === 'IT & Software')) {
+      propertySubType = category === 'Jobs' ? null : category;
+      mainCategory = 'Jobs';
+    } else if (category && (category === 'Services' || category.includes('Repair') || category.includes('Cleaning') || category.includes('Packers') || category.includes('Renovation') || category.includes('Legal'))) {
+      propertySubType = category === 'Services' ? null : category;
+      mainCategory = 'Services';
     }
 
     const realPosterName = (posterName || req.user?.name || 'Seller').trim() || 'Seller';
@@ -168,7 +177,36 @@ const postAd = async (req, res) => {
       city: 'Bangalore',
       category: mainCategory,
       propertySubType,
-      dimensions: dimensions || null,
+      dimensions: dimensions || req.body.superBuiltupArea || req.body.plotArea || null,
+      facing: req.body.facing || null,
+      plotNumber: req.body.plotNumber || null,
+      bhk: req.body.bhk || null,
+      bathrooms: req.body.bathrooms || null,
+      furnishing: req.body.furnishing || null,
+      projectStatus: req.body.projectStatus || null,
+      listedBy: req.body.listedBy || null,
+      superBuiltupArea: req.body.superBuiltupArea || null,
+      carpetArea: req.body.carpetArea || null,
+      maintenanceMonthly: req.body.maintenanceMonthly || null,
+      totalFloors: req.body.totalFloors || null,
+      carParking: req.body.carParking || null,
+      floorNo: req.body.floorNo || null,
+      washrooms: req.body.washrooms || null,
+      plotArea: req.body.plotArea || null,
+      length: req.body.length || null,
+      breadth: req.body.breadth || null,
+      type: req.body.type || req.body.serviceType || null,
+      brand: req.body.brand || null,
+      year: req.body.year || null,
+      fuel: req.body.fuel || null,
+      kmDriven: req.body.kmDriven || null,
+      brandModel: req.body.brandModel || req.body.brand || null,
+      positionType: req.body.positionType || null,
+      salaryFrom: req.body.salaryFrom || null,
+      salaryTo: req.body.salaryTo || null,
+      salaryPeriod: req.body.salaryPeriod || null,
+      serviceType: req.body.serviceType || req.body.type || null,
+      specifications: req.body.specifications || {},
       imageUrls: finalImageUrls,
       posterName: realPosterName,
       posterPhone: realPosterPhone,
@@ -220,8 +258,6 @@ const getMyAds = async (req, res) => {
   }
 };
 
-
-
 // @desc    Update user posted ad
 // @route   PUT /api/v1/user/my-ads/:id
 const updateMyAd = async (req, res) => {
@@ -240,7 +276,20 @@ const updateMyAd = async (req, res) => {
     if (imageUrls) ad.imageUrls = imageUrls;
     if (status) ad.status = status;
 
-    await ad.save();
+    const fieldsToUpdate = [
+      'facing', 'plotNumber', 'bhk', 'bathrooms', 'furnishing', 'projectStatus',
+      'listedBy', 'superBuiltupArea', 'carpetArea', 'maintenanceMonthly', 'totalFloors',
+      'carParking', 'floorNo', 'washrooms', 'plotArea', 'length', 'breadth', 'type',
+      'brand', 'year', 'fuel', 'kmDriven', 'brandModel',
+      'positionType', 'salaryFrom', 'salaryTo', 'salaryPeriod', 'serviceType', 'specifications'
+    ];
+    fieldsToUpdate.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        ad[field] = req.body[field];
+      }
+    });
+
+    await ad.save();ve();
 
     return res.json({
       success: true,

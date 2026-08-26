@@ -10,11 +10,24 @@ export const Sell = () => {
   const { data: categoriesFromApi } = useQuery({
     queryKey: ['userCategories'],
     queryFn: () => categoryApi.getCategories(),
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const categories = Array.isArray(categoriesFromApi) && categoriesFromApi.length > 0
     ? categoriesFromApi
-        .filter((c) => c.parent === 'None (Main Category)' || !c.parent)
+        .filter((c) => {
+          if (c.isActive === false) return false;
+          if (!c.parent || c.parent === 'None (Main Category)' || c.parent === 'None' || c.parent.trim() === '') return true;
+          if (Array.isArray(c.subCategories) && c.subCategories.length > 0) return true;
+          const standardMains = ['properties', 'bikes', 'jobs', 'services', 'layout sites', 'electric scooters', 'others'];
+          if (standardMains.includes(c.name.trim().toLowerCase())) return true;
+          const isChildOfExisting = categoriesFromApi.some(
+            (other) => other.name.trim().toLowerCase() === c.parent.trim().toLowerCase() && other.name.trim().toLowerCase() !== c.name.trim().toLowerCase()
+          );
+          return !isChildOfExisting;
+        })
         .map((c) => ({
           title: c.name,
           desc: c.description || `Post listings and offers under ${c.name}`,
@@ -53,6 +66,22 @@ export const Sell = () => {
           categoryParam: 'Properties',
         },
         {
+          title: 'Sell Bikes & Products',
+          desc: 'Motorcycles, scooters, bicycles & spare parts',
+          icon: '🏍️',
+          bg: 'bg-[#f0fdf4]',
+          arrowColor: 'text-emerald-600',
+          categoryParam: 'Bikes',
+        },
+        {
+          title: 'Post Jobs & Hiring',
+          desc: 'Telecaller, Data Entry, Sales, Drivers & Delivery',
+          icon: '💼',
+          bg: 'bg-[#faf5ff]',
+          arrowColor: 'text-purple-600',
+          categoryParam: 'Jobs',
+        },
+        {
           title: 'Rent / Sell EV Scooter',
           desc: 'Electric scooters, bikes & rental fleets',
           icon: '🛵',
@@ -72,8 +101,8 @@ export const Sell = () => {
           title: 'Other Products & Services',
           desc: 'General products & promotional ads',
           icon: '📦',
-          bg: 'bg-[#f0fdf4]',
-          arrowColor: 'text-teal-600',
+          bg: 'bg-[#f8fafc]',
+          arrowColor: 'text-slate-600',
           categoryParam: 'Others',
         },
       ];
