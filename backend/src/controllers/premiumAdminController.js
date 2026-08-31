@@ -33,44 +33,63 @@ const generateContentId = async () => {
   const prefix = 'PREM-CNT-';
   const defaultStartSeq = 1000;
 
-  // Self-initialize counter if not present, checking existing PremiumContent documents
-  const existingCounter = await Counter.findById(counterName);
-  if (!existingCounter) {
-    const existingItems = await PremiumContent.find(
-      { contentId: /^PREM-CNT-\d+$/ },
-      { contentId: 1 }
-    ).lean();
+  // 1. Find highest existing numeric ID in PremiumContent
+  const lastItem = await PremiumContent.findOne(
+    { contentId: /^PREM-CNT-\d+$/ },
+    { contentId: 1 }
+  )
+    .sort({ contentId: -1 })
+    .lean();
 
-    let maxSeq = defaultStartSeq;
-    for (const item of existingItems) {
-      if (item.contentId) {
-        const numStr = item.contentId.replace(prefix, '');
-        const num = parseInt(numStr, 10);
-        if (!isNaN(num) && num > maxSeq) {
-          maxSeq = num;
-        }
-      }
-    }
-
-    try {
-      await Counter.updateOne(
-        { _id: counterName },
-        { $setOnInsert: { seq: maxSeq } },
-        { upsert: true }
-      );
-    } catch (err) {
-      // Ignore upsert race condition if another process created it first
+  let maxExistingSeq = defaultStartSeq;
+  if (lastItem && lastItem.contentId) {
+    const numStr = lastItem.contentId.replace(prefix, '');
+    const num = parseInt(numStr, 10);
+    if (!isNaN(num) && num > maxExistingSeq) {
+      maxExistingSeq = num;
     }
   }
 
-  // Atomically increment counter
-  const counter = await Counter.findByIdAndUpdate(
-    counterName,
-    { $inc: { seq: 1 } },
-    { new: true, upsert: true }
-  );
+  let candidateId = '';
+  let exists = true;
+  let attempts = 0;
 
-  return `${prefix}${counter.seq}`;
+  // 2. Atomically increment counter ensuring seq is strictly greater than maxExistingSeq
+  while (exists && attempts < 10) {
+    attempts++;
+    const counter = await Counter.findOneAndUpdate(
+      { _id: counterName },
+      [
+        {
+          $set: {
+            seq: {
+              $add: [
+                {
+                  $max: [
+                    { $ifNull: ['$seq', defaultStartSeq] },
+                    maxExistingSeq,
+                  ],
+                },
+                1,
+              ],
+            },
+          },
+        },
+      ],
+      { new: true, upsert: true }
+    );
+
+    candidateId = `${prefix}${counter.seq}`;
+    // Verify candidate ID doesn't already exist in database
+    const itemExists = await PremiumContent.exists({ contentId: candidateId });
+    if (!itemExists) {
+      exists = false;
+    } else {
+      maxExistingSeq = Math.max(maxExistingSeq, counter.seq);
+    }
+  }
+
+  return candidateId;
 };
 
 // Helper to calculate expiry date based on plan
