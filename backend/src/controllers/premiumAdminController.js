@@ -7,6 +7,7 @@ const PremiumContent = require('../models/PremiumContent');
 const PremiumUpgradeRequest = require('../models/PremiumUpgradeRequest');
 const PremiumActivity = require('../models/PremiumActivity');
 const User = require('../models/User');
+const Counter = require('../models/Counter');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 // Helper to safely build Mongoose query without throwing CastError on invalid ObjectIds
@@ -26,11 +27,50 @@ const generatePremiumMemberId = async () => {
   return `PREM-${year}-${nextNum}`;
 };
 
-// Helper to generate unique Content ID (e.g., PREM-CNT-1001)
+// Helper to generate unique Content ID using MongoDB Atomic Counter (e.g., PREM-CNT-1001)
 const generateContentId = async () => {
-  const count = await PremiumContent.countDocuments();
-  const nextNum = (count + 1001).toString();
-  return `PREM-CNT-${nextNum}`;
+  const counterName = 'premium_content_id';
+  const prefix = 'PREM-CNT-';
+  const defaultStartSeq = 1000;
+
+  // Self-initialize counter if not present, checking existing PremiumContent documents
+  const existingCounter = await Counter.findById(counterName);
+  if (!existingCounter) {
+    const existingItems = await PremiumContent.find(
+      { contentId: /^PREM-CNT-\d+$/ },
+      { contentId: 1 }
+    ).lean();
+
+    let maxSeq = defaultStartSeq;
+    for (const item of existingItems) {
+      if (item.contentId) {
+        const numStr = item.contentId.replace(prefix, '');
+        const num = parseInt(numStr, 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+
+    try {
+      await Counter.updateOne(
+        { _id: counterName },
+        { $setOnInsert: { seq: maxSeq } },
+        { upsert: true }
+      );
+    } catch (err) {
+      // Ignore upsert race condition if another process created it first
+    }
+  }
+
+  // Atomically increment counter
+  const counter = await Counter.findByIdAndUpdate(
+    counterName,
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+
+  return `${prefix}${counter.seq}`;
 };
 
 // Helper to calculate expiry date based on plan
@@ -186,24 +226,38 @@ const createPremiumContent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Description text is required for TEXT content' });
     }
 
-    const contentId = await generateContentId();
-
     const isPremiumBool = premiumOnly !== undefined ? (premiumOnly === 'true' || premiumOnly === true) : true;
 
-    const newContent = await PremiumContent.create({
-      contentId,
-      contentType,
-      title: title.trim(),
-      description: description || '',
-      mediaUrl,
-      thumbnailUrl,
-      displayOrder: parseInt(displayOrder || '0', 10),
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
-      status: status || 'DRAFT',
-      premiumOnly: isPremiumBool,
-      createdBy: req.admin?.adminId || 'ADMIN',
-    });
+    let newContent;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        const contentId = await generateContentId();
+        newContent = await PremiumContent.create({
+          contentId,
+          contentType,
+          title: title.trim(),
+          description: description || '',
+          mediaUrl,
+          thumbnailUrl,
+          displayOrder: parseInt(displayOrder || '0', 10),
+          startDate: startDate ? new Date(startDate) : null,
+          endDate: endDate ? new Date(endDate) : null,
+          status: status || 'DRAFT',
+          premiumOnly: isPremiumBool,
+          createdBy: req.admin?.adminId || 'ADMIN',
+        });
+        break;
+      } catch (err) {
+        if ((err.code === 11000 || (err.message && err.message.includes('E11000'))) && attempts < maxAttempts) {
+          continue;
+        }
+        throw err;
+      }
+    }
 
     return res.status(201).json({
       success: true,
