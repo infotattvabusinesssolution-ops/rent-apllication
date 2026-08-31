@@ -50,43 +50,37 @@ const generateContentId = async () => {
     }
   }
 
-  let candidateId = '';
-  let exists = true;
-  let attempts = 0;
+  // 2. Ensure Counter document is synced to at least maxExistingSeq
+  let counter = await Counter.findById(counterName);
+  if (!counter || counter.seq < maxExistingSeq) {
+    try {
+      await Counter.updateOne(
+        { _id: counterName },
+        { $max: { seq: maxExistingSeq } },
+        { upsert: true }
+      );
+    } catch (e) {
+      // Ignore potential upsert race conditions
+    }
+  }
 
-  // 2. Atomically increment counter ensuring seq is strictly greater than maxExistingSeq
-  while (exists && attempts < 10) {
-    attempts++;
-    const counter = await Counter.findOneAndUpdate(
-      { _id: counterName },
-      [
-        {
-          $set: {
-            seq: {
-              $add: [
-                {
-                  $max: [
-                    { $ifNull: ['$seq', defaultStartSeq] },
-                    maxExistingSeq,
-                  ],
-                },
-                1,
-              ],
-            },
-          },
-        },
-      ],
+  // 3. Atomically increment counter
+  counter = await Counter.findByIdAndUpdate(
+    counterName,
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+
+  let candidateId = `${prefix}${counter.seq}`;
+
+  // 4. Verify candidate ID does not exist in database; if it exists, keep incrementing
+  while (await PremiumContent.exists({ contentId: candidateId })) {
+    counter = await Counter.findByIdAndUpdate(
+      counterName,
+      { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
-
     candidateId = `${prefix}${counter.seq}`;
-    // Verify candidate ID doesn't already exist in database
-    const itemExists = await PremiumContent.exists({ contentId: candidateId });
-    if (!itemExists) {
-      exists = false;
-    } else {
-      maxExistingSeq = Math.max(maxExistingSeq, counter.seq);
-    }
   }
 
   return candidateId;
