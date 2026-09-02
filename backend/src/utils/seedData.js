@@ -5,14 +5,6 @@ dotenv.config();
 
 const connectDB = require('../config/db');
 const Admin = require('../models/Admin');
-const User = require('../models/User');
-const Advertisement = require('../models/Advertisement');
-const Banner = require('../models/Banner');
-const Subscription = require('../models/Subscription');
-const Lead = require('../models/Lead');
-const Report = require('../models/Report');
-const VisitorWin = require('../models/VisitorWin');
-const SystemSettings = require('../models/SystemSettings');
 
 const seedData = async () => {
   try {

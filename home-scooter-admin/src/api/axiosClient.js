@@ -19,7 +19,7 @@ const getApiBaseUrl = () => {
       hostname === '127.0.0.1' ||
       hostname.startsWith('192.168.') ||
       hostname.startsWith('10.') ||
-      hostname.endsWith('.local');
+      hostname.endsWith('.local');  
 
     if (isLocalhost) {
       return LOCAL_API_URL;
