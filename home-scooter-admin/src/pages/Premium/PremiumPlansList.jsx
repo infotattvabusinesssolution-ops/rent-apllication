@@ -41,7 +41,13 @@ export const PremiumPlansList = () => {
     queryFn: () => premiumAdminApi.getPlans(),
   });
 
-  const plans = plansData?.data?.data || [];
+  const plans = Array.isArray(plansData?.data)
+    ? plansData.data
+    : Array.isArray(plansData?.data?.data)
+    ? plansData.data.data
+    : Array.isArray(plansData)
+    ? plansData
+    : [];
 
   // Create Mutation
   const createMutation = useMutation({
@@ -50,7 +56,7 @@ export const PremiumPlansList = () => {
       toast.success('Membership plan created successfully!');
       setIsCreateModalOpen(false);
       resetForm();
-      queryClient.invalidateQueries(['premiumAdminPlans']);
+      queryClient.invalidateQueries({ queryKey: ['premiumAdminPlans'] });
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create plan'),
   });
@@ -63,7 +69,7 @@ export const PremiumPlansList = () => {
       setIsEditModalOpen(false);
       setSelectedPlan(null);
       resetForm();
-      queryClient.invalidateQueries(['premiumAdminPlans']);
+      queryClient.invalidateQueries({ queryKey: ['premiumAdminPlans'] });
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to update plan'),
   });
@@ -73,7 +79,7 @@ export const PremiumPlansList = () => {
     mutationFn: (id) => premiumAdminApi.deletePlan(id),
     onSuccess: () => {
       toast.success('Plan deleted successfully');
-      queryClient.invalidateQueries(['premiumAdminPlans']);
+      queryClient.invalidateQueries({ queryKey: ['premiumAdminPlans'] });
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete plan'),
   });
@@ -108,12 +114,14 @@ export const PremiumPlansList = () => {
 
   const handleCreateSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.price || !formData.duration) {
-      toast.error('Name, price, and duration are required');
+    const duration = formData.duration || formData.name;
+    if (!formData.name || formData.price === '' || !duration) {
+      toast.error('Name and price are required');
       return;
     }
     createMutation.mutate({
       ...formData,
+      duration,
       price: Number(formData.price),
       durationInDays: Number(formData.durationInDays) || (formData.name.match(/\d+/) ? parseInt(formData.name.match(/\d+/)[0], 10) : 30),
       displayOrder: Number(formData.displayOrder) || 0,
@@ -122,14 +130,16 @@ export const PremiumPlansList = () => {
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.price || !formData.duration) {
-      toast.error('Name, price, and duration are required');
+    const duration = formData.duration || formData.name;
+    if (!formData.name || formData.price === '' || !duration) {
+      toast.error('Name and price are required');
       return;
     }
     updateMutation.mutate({
       id: selectedPlan.planId || selectedPlan._id,
       data: {
         ...formData,
+        duration,
         price: Number(formData.price),
         durationInDays: Number(formData.durationInDays) || (formData.name.match(/\d+/) ? parseInt(formData.name.match(/\d+/)[0], 10) : 30),
         displayOrder: Number(formData.displayOrder) || 0,

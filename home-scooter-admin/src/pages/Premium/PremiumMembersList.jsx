@@ -51,7 +51,14 @@ export const PremiumMembersList = () => {
     queryKey: ['premiumAdminPlans'],
     queryFn: () => premiumAdminApi.getPlans(),
   });
-  const availablePlans = plansData?.data?.data?.filter((p) => p.isActive) || [];
+  const plansList = Array.isArray(plansData?.data)
+    ? plansData.data
+    : Array.isArray(plansData?.data?.data)
+    ? plansData.data.data
+    : Array.isArray(plansData)
+    ? plansData
+    : [];
+  const availablePlans = plansList.filter((p) => p.isActive);
 
   const createMemberMutation = useMutation({
     mutationFn: (data) => premiumAdminApi.createMember(data),
