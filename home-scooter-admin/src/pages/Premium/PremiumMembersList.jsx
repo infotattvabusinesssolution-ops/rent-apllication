@@ -32,12 +32,12 @@ export const PremiumMembersList = () => {
     userName: '',
     userPhone: '',
     userEmail: '',
-    plan: '1 Month',
+    plan: '30 Days',
     password: '',
   });
 
   // Renew Plan State
-  const [renewPlan, setRenewPlan] = useState('1 Month');
+  const [renewPlan, setRenewPlan] = useState('30 Days');
 
   // Change Password State
   const [newPassword, setNewPassword] = useState('');
@@ -52,7 +52,7 @@ export const PremiumMembersList = () => {
     onSuccess: (res) => {
       toast.success(`Premium Member created! Password: ${res.data?.generatedPassword || 'Set'}`);
       setIsAddModalOpen(false);
-      setAddFormData({ userName: '', userPhone: '', userEmail: '', plan: '1 Month', password: '' });
+      setAddFormData({ userName: '', userPhone: '', userEmail: '', plan: '30 Days', password: '' });
       queryClient.invalidateQueries(['premiumAdminMembers']);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create member'),
@@ -321,10 +321,9 @@ export const PremiumMembersList = () => {
                   onChange={(e) => setAddFormData({ ...addFormData, plan: e.target.value })}
                   className="w-full p-2.5 text-xs border border-slate-200 rounded-xl focus:border-amber-500"
                 >
-                  <option value="1 Month">1 Month (30 Days)</option>
-                  <option value="3 Months">3 Months (90 Days)</option>
-                  <option value="6 Months">6 Months (180 Days)</option>
-                  <option value="12 Months">12 Months (365 Days)</option>
+                  <option value="3 Days">3 Days (₹39)</option>
+                  <option value="10 Days">10 Days (₹69)</option>
+                  <option value="30 Days">30 Days (₹149)</option>
                 </select>
               </div>
 
@@ -383,10 +382,9 @@ export const PremiumMembersList = () => {
                 onChange={(e) => setRenewPlan(e.target.value)}
                 className="w-full p-2.5 text-xs border border-slate-200 rounded-xl focus:border-amber-500"
               >
-                <option value="1 Month">1 Month</option>
-                <option value="3 Months">3 Months</option>
-                <option value="6 Months">6 Months</option>
-                <option value="12 Months">12 Months</option>
+                <option value="3 Days">3 Days (₹39)</option>
+                <option value="10 Days">10 Days (₹69)</option>
+                <option value="30 Days">30 Days (₹149)</option>
               </select>
             </div>
 
