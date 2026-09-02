@@ -6,20 +6,14 @@ dotenv.config();
 const connectDB = require('../config/db');
 const Admin = require('../models/Admin');
 
+
 const seedData = async () => {
   try {
     await connectDB();
 
     console.log('Clearing existing collections...');
     await Admin.deleteMany({});
-    await User.deleteMany({});
-    await Advertisement.deleteMany({});
-    await Banner.deleteMany({});
-    await Subscription.deleteMany({});
-    await Lead.deleteMany({});
-    await Report.deleteMany({});
-    await VisitorWin.deleteMany({});
-    await SystemSettings.deleteMany({});
+   
 
     console.log('Seeding Super Admin...');
     const email = (process.env.DEFAULT_ADMIN_EMAIL || 'admin@homescooter.com').toLowerCase();
