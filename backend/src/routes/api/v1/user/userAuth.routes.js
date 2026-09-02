@@ -9,6 +9,7 @@ const {
   logoutUser,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 } = require('../../../../controllers/user/userAuthController');
 const upload = require('../../../../middleware/uploadMiddleware');
 
@@ -20,6 +21,7 @@ router.post('/logout', logoutUser);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.put('/location', updateUserLocation);
+router.delete('/account', deleteAccount);
 
 module.exports = router;
 
