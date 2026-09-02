@@ -47,6 +47,12 @@ export const PremiumMembersList = () => {
     queryFn: () => premiumAdminApi.getMembers({ status: statusTab, search }),
   });
 
+  const { data: plansData } = useQuery({
+    queryKey: ['premiumAdminPlans'],
+    queryFn: () => premiumAdminApi.getPlans(),
+  });
+  const availablePlans = plansData?.data?.data?.filter((p) => p.isActive) || [];
+
   const createMemberMutation = useMutation({
     mutationFn: (data) => premiumAdminApi.createMember(data),
     onSuccess: (res) => {
@@ -321,9 +327,19 @@ export const PremiumMembersList = () => {
                   onChange={(e) => setAddFormData({ ...addFormData, plan: e.target.value })}
                   className="w-full p-2.5 text-xs border border-slate-200 rounded-xl focus:border-amber-500"
                 >
-                  <option value="3 Days">3 Days (₹39)</option>
-                  <option value="10 Days">10 Days (₹69)</option>
-                  <option value="30 Days">30 Days (₹149)</option>
+                  {availablePlans.length > 0 ? (
+                    availablePlans.map((p) => (
+                      <option key={p.planId || p._id} value={p.name}>
+                        {p.name} (₹{p.price})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="3 Days">3 Days (₹39)</option>
+                      <option value="10 Days">10 Days (₹69)</option>
+                      <option value="30 Days">30 Days (₹149)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -382,9 +398,19 @@ export const PremiumMembersList = () => {
                 onChange={(e) => setRenewPlan(e.target.value)}
                 className="w-full p-2.5 text-xs border border-slate-200 rounded-xl focus:border-amber-500"
               >
-                <option value="3 Days">3 Days (₹39)</option>
-                <option value="10 Days">10 Days (₹69)</option>
-                <option value="30 Days">30 Days (₹149)</option>
+                {availablePlans.length > 0 ? (
+                  availablePlans.map((p) => (
+                    <option key={p.planId || p._id} value={p.name}>
+                      {p.name} (₹{p.price})
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="3 Days">3 Days (₹39)</option>
+                    <option value="10 Days">10 Days (₹69)</option>
+                    <option value="30 Days">30 Days (₹149)</option>
+                  </>
+                )}
               </select>
             </div>
 

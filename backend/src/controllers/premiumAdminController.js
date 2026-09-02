@@ -6,6 +6,7 @@ const PremiumMember = require('../models/PremiumMember');
 const PremiumContent = require('../models/PremiumContent');
 const PremiumUpgradeRequest = require('../models/PremiumUpgradeRequest');
 const PremiumActivity = require('../models/PremiumActivity');
+const PremiumPlan = require('../models/PremiumPlan');
 const User = require('../models/User');
 const Counter = require('../models/Counter');
 const { uploadToCloudinary } = require('../utils/cloudinary');
@@ -87,31 +88,32 @@ const generateContentId = async () => {
 };
 
 // Helper to calculate expiry date based on plan
-const calculateExpiryDate = (startDate, plan) => {
+const calculateExpiryDate = (startDate, planName) => {
   const date = new Date(startDate);
-  switch (plan) {
-    case '3 Days':
-      date.setDate(date.getDate() + 3);
-      break;
-    case '10 Days':
-      date.setDate(date.getDate() + 10);
-      break;
-    case '30 Days':
-    case '1 Month':
-      date.setDate(date.getDate() + 30);
-      break;
-    case '3 Months':
-      date.setMonth(date.getMonth() + 3);
-      break;
-    case '6 Months':
-      date.setMonth(date.getMonth() + 6);
-      break;
-    case '12 Months':
-      date.setFullYear(date.getFullYear() + 1);
-      break;
-    default:
-      date.setDate(date.getDate() + 30);
+  if (!planName) {
+    date.setDate(date.getDate() + 30);
+    return date;
   }
+  // If planName contains "X Days" or "X Day", parse X
+  const daysMatch = planName.match(/(\d+)\s*Days?/i);
+  if (daysMatch) {
+    const days = parseInt(daysMatch[1], 10);
+    if (!isNaN(days) && days > 0) {
+      date.setDate(date.getDate() + days);
+      return date;
+    }
+  }
+  // If planName contains "X Months" or "X Month", parse X
+  const monthsMatch = planName.match(/(\d+)\s*Months?/i);
+  if (monthsMatch) {
+    const months = parseInt(monthsMatch[1], 10);
+    if (!isNaN(months) && months > 0) {
+      date.setMonth(date.getMonth() + months);
+      return date;
+    }
+  }
+  // Default to 30 days
+  date.setDate(date.getDate() + 30);
   return date;
 };
 
@@ -828,6 +830,103 @@ const getCloudinarySignature = async (req, res) => {
   }
 };
 
+// ==================== PLAN MANAGEMENT CONTROLLERS ====================
+
+// @desc    Get All Premium Plans (Admin)
+// @route   GET /api/v1/admin/premium/plans
+// @access  Private (Admin)
+const getPremiumPlans = async (req, res) => {
+  try {
+    let plans = await PremiumPlan.find().sort({ displayOrder: 1, price: 1 });
+    if (plans.length === 0) {
+      const defaultPlans = [
+        { planId: 'PLAN-3D', name: '3 Days', price: 39, duration: '3 Days', durationInDays: 3, popular: false, displayOrder: 1, isActive: true },
+        { planId: 'PLAN-10D', name: '10 Days', price: 69, duration: '10 Days', durationInDays: 10, popular: true, displayOrder: 2, isActive: true },
+        { planId: 'PLAN-30D', name: '30 Days', price: 149, duration: '30 Days', durationInDays: 30, popular: false, displayOrder: 3, isActive: true },
+      ];
+      plans = await PremiumPlan.insertMany(defaultPlans);
+    }
+    return res.json({ success: true, data: plans });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Create New Premium Plan
+// @route   POST /api/v1/admin/premium/plans
+// @access  Private (Admin)
+const createPremiumPlan = async (req, res) => {
+  try {
+    const { name, price, duration, durationInDays, popular, description, displayOrder, isActive } = req.body;
+
+    if (!name || price === undefined || !duration) {
+      return res.status(400).json({ success: false, message: 'Plan name, price, and duration are required' });
+    }
+
+    const planId = `PLAN-${Date.now().toString().slice(-6)}`;
+    const parsedDays = durationInDays || (name.match(/\d+/) ? parseInt(name.match(/\d+/)[0], 10) : 30);
+
+    const newPlan = await PremiumPlan.create({
+      planId,
+      name: name.trim(),
+      price: Number(price),
+      duration: duration.trim(),
+      durationInDays: parsedDays,
+      popular: Boolean(popular),
+      description: description ? description.trim() : '',
+      displayOrder: displayOrder !== undefined ? Number(displayOrder) : 0,
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
+    });
+
+    return res.status(201).json({ success: true, data: newPlan, message: 'Plan created successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update Premium Plan
+// @route   PUT /api/v1/admin/premium/plans/:id
+// @access  Private (Admin)
+const updatePremiumPlan = async (req, res) => {
+  try {
+    const plan = await PremiumPlan.findOne(buildIdQuery('planId', req.params.id));
+    if (!plan) {
+      return res.status(404).json({ success: false, message: 'Plan not found' });
+    }
+
+    const { name, price, duration, durationInDays, popular, description, displayOrder, isActive } = req.body;
+
+    if (name !== undefined) plan.name = name.trim();
+    if (price !== undefined) plan.price = Number(price);
+    if (duration !== undefined) plan.duration = duration.trim();
+    if (durationInDays !== undefined) plan.durationInDays = Number(durationInDays);
+    if (popular !== undefined) plan.popular = Boolean(popular);
+    if (description !== undefined) plan.description = description.trim();
+    if (displayOrder !== undefined) plan.displayOrder = Number(displayOrder);
+    if (isActive !== undefined) plan.isActive = Boolean(isActive);
+
+    await plan.save();
+    return res.json({ success: true, data: plan, message: 'Plan updated successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete Premium Plan
+// @route   DELETE /api/v1/admin/premium/plans/:id
+// @access  Private (Admin)
+const deletePremiumPlan = async (req, res) => {
+  try {
+    const plan = await PremiumPlan.findOneAndDelete(buildIdQuery('planId', req.params.id));
+    if (!plan) {
+      return res.status(404).json({ success: false, message: 'Plan not found' });
+    }
+    return res.json({ success: true, message: 'Plan deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getPremiumDashboardStats,
   getCloudinarySignature,
@@ -852,6 +951,11 @@ module.exports = {
   getUpgradeRequests,
   approveUpgradeRequest,
   rejectUpgradeRequest,
+
+  getPremiumPlans,
+  createPremiumPlan,
+  updatePremiumPlan,
+  deletePremiumPlan,
 
   getPremiumReports,
 };

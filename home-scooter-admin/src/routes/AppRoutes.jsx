@@ -33,6 +33,7 @@ import { LuckyDrawEnquiries } from '../pages/LuckyDraw/LuckyDrawEnquiries';
 import { PremiumDashboard } from '../pages/Premium/PremiumDashboard';
 import { PremiumContentList } from '../pages/Premium/PremiumContentList';
 import { PremiumMembersList } from '../pages/Premium/PremiumMembersList';
+import { PremiumPlansList } from '../pages/Premium/PremiumPlansList';
 import { PremiumUpgradeRequests } from '../pages/Premium/PremiumUpgradeRequests';
 import { PremiumReports } from '../pages/Premium/PremiumReports';
 
@@ -76,6 +77,7 @@ export const AppRoutes = () => {
         <Route path="premium" element={<PremiumDashboard />} />
         <Route path="premium/content" element={<PremiumContentList />} />
         <Route path="premium/members" element={<PremiumMembersList />} />
+        <Route path="premium/plans" element={<PremiumPlansList />} />
         <Route path="premium/upgrade-requests" element={<PremiumUpgradeRequests />} />
         <Route path="premium/reports" element={<PremiumReports />} />
 

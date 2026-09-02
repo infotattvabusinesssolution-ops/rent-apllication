@@ -21,6 +21,10 @@ const {
   getUpgradeRequests,
   approveUpgradeRequest,
   rejectUpgradeRequest,
+  getPremiumPlans,
+  createPremiumPlan,
+  updatePremiumPlan,
+  deletePremiumPlan,
   getPremiumReports,
 } = require('../../../../controllers/premiumAdminController');
 const { protectAdmin } = require('../../../../middleware/authMiddleware');
@@ -32,6 +36,12 @@ router.use(protectAdmin);
 // Dashboard & Signature
 router.get('/dashboard', getPremiumDashboardStats);
 router.get('/cloudinary-signature', getCloudinarySignature);
+
+// Plan Management Routes
+router.get('/plans', getPremiumPlans);
+router.post('/plans', createPremiumPlan);
+router.put('/plans/:id', updatePremiumPlan);
+router.delete('/plans/:id', deletePremiumPlan);
 
 // Content Routes
 router.get('/content', getPremiumContent);

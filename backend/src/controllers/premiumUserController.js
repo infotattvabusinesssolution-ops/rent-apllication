@@ -5,6 +5,7 @@ const PremiumMember = require('../models/PremiumMember');
 const PremiumContent = require('../models/PremiumContent');
 const PremiumUpgradeRequest = require('../models/PremiumUpgradeRequest');
 const PremiumActivity = require('../models/PremiumActivity');
+const PremiumPlan = require('../models/PremiumPlan');
 const User = require('../models/User');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
@@ -170,6 +171,16 @@ const getMembershipDetails = async (req, res) => {
 const getPublicPremiumInfo = async (req, res) => {
   try {
     const activeContentCount = await PremiumContent.countDocuments({ status: 'ACTIVE' });
+    let plans = await PremiumPlan.find({ isActive: true }).sort({ displayOrder: 1, price: 1 });
+
+    if (plans.length === 0) {
+      const defaultPlans = [
+        { planId: 'PLAN-3D', name: '3 Days', price: 39, duration: '3 Days', durationInDays: 3, popular: false, displayOrder: 1, isActive: true },
+        { planId: 'PLAN-10D', name: '10 Days', price: 69, duration: '10 Days', durationInDays: 10, popular: true, displayOrder: 2, isActive: true },
+        { planId: 'PLAN-30D', name: '30 Days', price: 149, duration: '30 Days', durationInDays: 30, popular: false, displayOrder: 3, isActive: true },
+      ];
+      plans = await PremiumPlan.insertMany(defaultPlans);
+    }
 
     return res.json({
       success: true,
@@ -179,11 +190,12 @@ const getPublicPremiumInfo = async (req, res) => {
         { title: 'Exclusive Video Streams', description: 'Watch detailed video walkthroughs and feature showcases', icon: 'Video' },
       ],
       activeContentCount,
-      plans: [
-        { name: '3 Days', price: 39, duration: '3 Days', popular: false },
-        { name: '10 Days', price: 69, duration: '10 Days', popular: true },
-        { name: '30 Days', price: 149, duration: '30 Days', popular: false },
-      ],
+      plans: plans.map((p) => ({
+        name: p.name,
+        price: p.price,
+        duration: p.duration,
+        popular: p.popular,
+      })),
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -281,6 +293,7 @@ const submitUpgradeRequest = async (req, res) => {
     }
 
     const requestId = await generateRequestId();
+    const dbPlan = await PremiumPlan.findOne({ name: plan, isActive: true });
     const planPrices = {
       '3 Days': 39,
       '10 Days': 69,
@@ -290,7 +303,7 @@ const submitUpgradeRequest = async (req, res) => {
       '6 Months': 1499,
       '12 Months': 2499,
     };
-    const finalAmount = amount || planPrices[plan] || 39;
+    const finalAmount = amount || (dbPlan ? dbPlan.price : planPrices[plan] || 39);
 
     const request = await PremiumUpgradeRequest.create({
       requestId,

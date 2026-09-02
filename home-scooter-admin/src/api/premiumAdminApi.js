@@ -38,6 +38,12 @@ export const premiumAdminApi = {
   approveUpgradeRequest: (id, data) => axiosClient.post(`/api/v1/admin/premium/upgrade-requests/${id}/approve`, data),
   rejectUpgradeRequest: (id, data) => axiosClient.post(`/api/v1/admin/premium/upgrade-requests/${id}/reject`, data),
 
+  // Plan Management
+  getPlans: () => axiosClient.get('/api/v1/admin/premium/plans'),
+  createPlan: (data) => axiosClient.post('/api/v1/admin/premium/plans', data),
+  updatePlan: (id, data) => axiosClient.put(`/api/v1/admin/premium/plans/${id}`, data),
+  deletePlan: (id) => axiosClient.delete(`/api/v1/admin/premium/plans/${id}`),
+
   // Activity & Reports
   getReports: () => axiosClient.get('/api/v1/admin/premium/reports'),
 };
