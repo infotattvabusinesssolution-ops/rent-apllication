@@ -1,17 +1,19 @@
 import axios from 'axios';
 import { toast } from 'sonner';
 
-const LIVE_API_URL = 'https://rentapi.infotattvabusinesssolutions.com';
-const LOCAL_API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5027';
+const LIVE_API_URL = 'https://api.homeandscooterapp.online';
+const LOCAL_API_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5027';
 
 /**
  * Dynamically determines the backend API URL:
- * - If running locally (localhost, 127.0.0.1, or local network IP), uses local server URL.
- * - Otherwise (deployed/live production environment), uses live server URL.
+ * - Local development → local backend
+ * - Production/deployed → live API
  */
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+
     const isLocalhost =
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
@@ -22,29 +24,32 @@ const getApiBaseUrl = () => {
     if (isLocalhost) {
       return LOCAL_API_URL;
     }
+
     return import.meta.env.VITE_LIVE_API_BASE_URL || LIVE_API_URL;
   }
+
   return import.meta.env.DEV ? LOCAL_API_URL : LIVE_API_URL;
 };
 
 const API_BASE_URL = getApiBaseUrl().replace(/\/+$/, '');
-
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 120000, // 2 minutes default timeout for API requests
+  timeout: 120000,
 });
 
 // Request Interceptor: Attach bearer token
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('admin_token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -56,9 +61,11 @@ axiosClient.interceptors.response.use(
   (error) => {
     if (error.response) {
       const status = error.response.status;
+
       if (status === 401) {
         localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_user');
+
         if (window.location.pathname !== '/login') {
           toast.error('Session expired. Please log in again.');
           window.location.href = '/login';
@@ -69,6 +76,7 @@ axiosClient.interceptors.response.use(
         toast.error('Server error occurred. Please try again later.');
       }
     }
+
     return Promise.reject(error);
   }
 );
