@@ -10,7 +10,7 @@ const premiumMemberSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     plan: { 
       type: String, 
-      enum: ['1 Month', '3 Months', '6 Months', '12 Months'], 
+      enum: ['3 Days', '10 Days', '30 Days', '1 Month', '3 Months', '6 Months', '12 Months'], 
       required: true 
     },
     startDate: { type: Date, required: true, default: Date.now },

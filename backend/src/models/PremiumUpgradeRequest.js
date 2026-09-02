@@ -10,7 +10,7 @@ const premiumUpgradeRequestSchema = new mongoose.Schema(
     premiumMemberId: { type: String, default: null },
     plan: {
       type: String,
-      enum: ['1 Month', '3 Months', '6 Months', '12 Months'],
+      enum: ['3 Days', '10 Days', '30 Days', '1 Month', '3 Months', '6 Months', '12 Months'],
       required: true,
     },
     amount: { type: Number, required: true },

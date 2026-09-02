@@ -180,10 +180,9 @@ const getPublicPremiumInfo = async (req, res) => {
       ],
       activeContentCount,
       plans: [
-        { name: '1 Month', price: 299, duration: '30 Days', popular: false },
-        { name: '3 Months', price: 799, duration: '90 Days', popular: true },
-        { name: '6 Months', price: 1499, duration: '180 Days', popular: false },
-        { name: '12 Months', price: 2499, duration: '365 Days', popular: false },
+        { name: '3 Days', price: 39, duration: '3 Days', popular: false },
+        { name: '10 Days', price: 69, duration: '10 Days', popular: true },
+        { name: '30 Days', price: 149, duration: '30 Days', popular: false },
       ],
     });
   } catch (error) {
@@ -283,12 +282,15 @@ const submitUpgradeRequest = async (req, res) => {
 
     const requestId = await generateRequestId();
     const planPrices = {
-      '1 Month': 299,
+      '3 Days': 39,
+      '10 Days': 69,
+      '30 Days': 149,
+      '1 Month': 149,
       '3 Months': 799,
       '6 Months': 1499,
       '12 Months': 2499,
     };
-    const finalAmount = amount || planPrices[plan] || 299;
+    const finalAmount = amount || planPrices[plan] || 39;
 
     const request = await PremiumUpgradeRequest.create({
       requestId,

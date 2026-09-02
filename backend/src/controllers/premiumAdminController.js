@@ -90,8 +90,15 @@ const generateContentId = async () => {
 const calculateExpiryDate = (startDate, plan) => {
   const date = new Date(startDate);
   switch (plan) {
+    case '3 Days':
+      date.setDate(date.getDate() + 3);
+      break;
+    case '10 Days':
+      date.setDate(date.getDate() + 10);
+      break;
+    case '30 Days':
     case '1 Month':
-      date.setMonth(date.getMonth() + 1);
+      date.setDate(date.getDate() + 30);
       break;
     case '3 Months':
       date.setMonth(date.getMonth() + 3);
@@ -103,7 +110,7 @@ const calculateExpiryDate = (startDate, plan) => {
       date.setFullYear(date.getFullYear() + 1);
       break;
     default:
-      date.setMonth(date.getMonth() + 1);
+      date.setDate(date.getDate() + 30);
   }
   return date;
 };
