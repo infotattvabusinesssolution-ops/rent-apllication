@@ -6,7 +6,7 @@ const advertisementSchema = new mongoose.Schema(
     adId: { type: String, required: true, unique: true }, // e.g. AD1024
     title: { type: String, required: true, trim: true, index: true },
     description: { type: String, required: true },
-    price: { type: Number, required: true },
+    price: { type: Number, required: false, default: 0 },
     priceUnit: { type: String, default: '₹' },
     location: { type: String, required: true, index: true },
     city: { type: String, required: true, default: 'Bangalore' },

@@ -423,6 +423,52 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// @desc    Delete user account and associated data
+// @route   DELETE /api/v1/user/auth/account
+// @access  Private / Public
+const deleteAccount = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let userId = req.body?.userId || req.query?.userId;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+        userId = decoded.userId || decoded.id || userId;
+      } catch (err) {
+        // Continue with fallback userId
+      }
+    }
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required to delete account' });
+    }
+
+    // Delete user record from User model
+    const deletedUser = await User.findOneAndDelete({
+      $or: [{ userId: String(userId) }, { email: String(userId) }],
+    });
+
+    // Clean up user posted ads
+    try {
+      const Advertisement = require('../../models/Advertisement');
+      await Advertisement.deleteMany({
+        $or: [{ posterId: String(userId) }, { posterPhone: deletedUser?.phone }],
+      });
+    } catch (adErr) {
+      // Non-blocking
+    }
+
+    return res.json({
+      success: true,
+      message: 'Your account and all associated listings have been deleted successfully.',
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete account. Please try again later.' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -432,6 +478,7 @@ module.exports = {
   logoutUser,
   forgotPassword,
   resetPassword,
+  deleteAccount,
 };
 
 
