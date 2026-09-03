@@ -43,6 +43,10 @@ import { EducationContentList } from '../pages/Education/EducationContentList';
 import { EducationNotificationsList } from '../pages/Education/EducationNotificationsList';
 import { EducationReports } from '../pages/Education/EducationReports';
 
+import { PrivacyPolicy } from '../pages/PrivacyPolicy';
+import { RefundPolicy } from '../pages/RefundPolicy';
+import { TermsConditions } from '../pages/TermsConditions';
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) return null;
@@ -54,6 +58,14 @@ export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
+      <Route path="/refund-cancellation-policy" element={<RefundPolicy />} />
+      <Route path="/cancellation-policy" element={<RefundPolicy />} />
+      <Route path="/terms-and-conditions" element={<TermsConditions />} />
+      <Route path="/terms-conditions" element={<TermsConditions />} />
+      <Route path="/terms" element={<TermsConditions />} />
 
       <Route
         path="/"
