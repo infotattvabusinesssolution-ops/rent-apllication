@@ -44,17 +44,28 @@ export const BannerCreate = () => {
       return;
     }
 
-    const payload = {
-      title,
-      targetScreen,
-      imageUrl: previewUrl,
-      destinationUrl,
-      phoneNumber,
-      startDate,
-      expiryDate,
-    };
-
-    createMutation.mutate(payload);
+    if (mediaFile) {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('targetScreen', targetScreen);
+      formData.append('image', mediaFile);
+      if (destinationUrl) formData.append('destinationUrl', destinationUrl);
+      if (phoneNumber) formData.append('phoneNumber', phoneNumber);
+      if (startDate) formData.append('startDate', startDate);
+      if (expiryDate) formData.append('expiryDate', expiryDate);
+      createMutation.mutate(formData);
+    } else {
+      const payload = {
+        title,
+        targetScreen,
+        imageUrl: previewUrl,
+        destinationUrl,
+        phoneNumber,
+        startDate,
+        expiryDate,
+      };
+      createMutation.mutate(payload);
+    }
   };
 
   return (

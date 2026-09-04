@@ -96,7 +96,7 @@ const createBanner = async (req, res) => {
       finalImageUrl = `/uploads/${req.file.filename}`;
     }
 
-    const bannerId = `BAN-${Math.floor(100 + Math.random() * 900)}`;
+    const bannerId = `BAN-${Date.now().toString().slice(-6)}${Math.floor(10 + Math.random() * 90)}`;
 
     const newBanner = new Banner({
       bannerId,

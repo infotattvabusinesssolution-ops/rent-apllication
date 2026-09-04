@@ -54,10 +54,19 @@ const USER_ROLES = {
   SUPPORT: 'SUPPORT',
 };
 
+const BANNER_LOCATIONS = [
+  'Home Top Carousel',
+  'Property Feed Banner',
+  'Scooter Section',
+  'Services Section',
+  'Others',
+];
+
 module.exports = {
   CATEGORIES,
   AD_STATUS,
   BANNER_STATUS,
+  BANNER_LOCATIONS,
   SUBSCRIPTION_STATUS,
   LEAD_STATUS,
   REPORT_STATUS,

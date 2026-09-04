@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { BANNER_STATUS } = require('../config/constants');
+const { BANNER_STATUS, BANNER_LOCATIONS } = require('../config/constants');
 
 const bannerSchema = new mongoose.Schema(
   {
@@ -7,7 +7,7 @@ const bannerSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     targetScreen: {
       type: String,
-      enum: ['Home Top Carousel', 'Scooter Section', 'Property Feed Banner', 'Others'],
+      enum: BANNER_LOCATIONS,
       required: true,
     },
     imageUrl: { type: String, required: true },
