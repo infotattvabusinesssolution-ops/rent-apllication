@@ -172,7 +172,15 @@ export const BannerList = () => {
               >
                 <div>
                   <div className="relative aspect-video rounded-lg overflow-hidden mb-3 border border-slate-200 bg-slate-900 group">
-                    <img src={banner.imageUrl} alt={banner.title} className="w-full h-full object-cover" />
+                    <img
+                      src={banner.imageUrl}
+                      alt={banner.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200';
+                      }}
+                    />
                     <button
                       onClick={() => setLightboxImage(banner.imageUrl)}
                       className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity"

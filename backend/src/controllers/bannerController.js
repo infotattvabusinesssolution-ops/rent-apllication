@@ -1,5 +1,15 @@
+const mongoose = require('mongoose');
 const Banner = require('../models/Banner');
 const { BANNER_STATUS } = require('../config/constants');
+const { uploadToCloudinary } = require('../utils/cloudinary');
+
+const getBannerQuery = (id) => {
+  if (!id) return {};
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return { $or: [{ bannerId: id }, { _id: id }] };
+  }
+  return { bannerId: id };
+};
 
 // @desc    Get all banners
 // @route   GET /api/v1/admin/banners
@@ -24,7 +34,11 @@ const getBanners = async (req, res) => {
     const banners = await Banner.find(query).sort({ createdAt: -1 });
     const formattedBanners = banners.map((b) => {
       const obj = b.toObject();
-      return { ...obj, id: obj.bannerId };
+      let imageUrl = obj.imageUrl;
+      if (!imageUrl || imageUrl.includes('undefined')) {
+        imageUrl = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200';
+      }
+      return { ...obj, id: obj.bannerId || obj._id, imageUrl };
     });
 
     return res.json({ success: true, data: formattedBanners, total: formattedBanners.length });
@@ -38,7 +52,8 @@ const getBanners = async (req, res) => {
 // @access  Private (Admin)
 const approveBanner = async (req, res) => {
   try {
-    const banner = await Banner.findOne({ $or: [{ bannerId: req.params.id }, { _id: req.params.id }] });
+    const query = getBannerQuery(req.params.id);
+    const banner = await Banner.findOne(query);
     if (!banner) {
       return res.status(404).json({ success: false, message: 'Banner not found' });
     }
@@ -59,7 +74,8 @@ const approveBanner = async (req, res) => {
 const rejectBanner = async (req, res) => {
   try {
     const { reason = 'Violates campaign guidelines' } = req.body;
-    const banner = await Banner.findOne({ $or: [{ bannerId: req.params.id }, { _id: req.params.id }] });
+    const query = getBannerQuery(req.params.id);
+    const banner = await Banner.findOne(query);
 
     if (!banner) {
       return res.status(404).json({ success: false, message: 'Banner not found' });
@@ -92,8 +108,23 @@ const createBanner = async (req, res) => {
     } = req.body;
 
     let finalImageUrl = imageUrl;
+
     if (req.file) {
-      finalImageUrl = `/uploads/${req.file.filename}`;
+      try {
+        finalImageUrl = await uploadToCloudinary(req.file, 'homescooter_banners');
+      } catch (err) {
+        console.error('Cloudinary upload error:', err);
+      }
+    } else if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('data:image')) {
+      try {
+        finalImageUrl = await uploadToCloudinary(imageUrl, 'homescooter_banners');
+      } catch (err) {
+        console.error('Cloudinary base64 upload error:', err);
+      }
+    }
+
+    if (!finalImageUrl || finalImageUrl.includes('undefined')) {
+      finalImageUrl = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200';
     }
 
     const bannerId = `BAN-${Date.now().toString().slice(-6)}${Math.floor(10 + Math.random() * 90)}`;
@@ -102,7 +133,7 @@ const createBanner = async (req, res) => {
       bannerId,
       title: title || 'New Promotional Campaign',
       targetScreen: targetScreen || 'Home Top Carousel',
-      imageUrl: finalImageUrl || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200',
+      imageUrl: finalImageUrl,
       destinationUrl: destinationUrl || 'https://homescooter.com',
       phoneNumber: phoneNumber || '+91 98000 00000',
       sponsorName: sponsorName || 'Admin Sponsor',
@@ -129,7 +160,8 @@ const createBanner = async (req, res) => {
 // @access  Private (Admin)
 const deleteBanner = async (req, res) => {
   try {
-    const banner = await Banner.findOneAndDelete({ $or: [{ bannerId: req.params.id }, { _id: req.params.id }] });
+    const query = getBannerQuery(req.params.id);
+    const banner = await Banner.findOneAndDelete(query);
     if (!banner) {
       return res.status(404).json({ success: false, message: 'Banner not found' });
     }
