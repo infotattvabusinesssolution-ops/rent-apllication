@@ -274,7 +274,15 @@ const updateMyAd = async (req, res) => {
     if (description) ad.description = description;
     if (dimensions !== undefined) ad.dimensions = dimensions;
     if (imageUrls) ad.imageUrls = imageUrls;
-    if (status) ad.status = status;
+
+    if (status === 'UNPUBLISHED') {
+      ad.status = 'UNPUBLISHED';
+    } else {
+      // Whenever an ad is edited by the user, reset to PENDING_APPROVAL for admin review
+      ad.status = 'PENDING_APPROVAL';
+      ad.rejectionReason = null;
+      ad.rejectionNotes = null;
+    }
 
     const fieldsToUpdate = [
       'facing', 'plotNumber', 'bhk', 'bathrooms', 'furnishing', 'projectStatus',
@@ -289,11 +297,24 @@ const updateMyAd = async (req, res) => {
       }
     });
 
-    await ad.save();ve();
+    await ad.save();
+
+    if (ad.status === 'PENDING_APPROVAL') {
+      const { sendNotification } = require('../../utils/createNotification');
+      await sendNotification({
+        recipientType: 'ADMIN',
+        title: 'Listing Edited - Pending Review ✏️',
+        desc: `Listing '${ad.title}' was updated by ${ad.posterName} and is awaiting re-approval.`,
+        type: 'ad',
+        path: '/ads/pending',
+      });
+    }
 
     return res.json({
       success: true,
-      message: 'Advertisement updated successfully!',
+      message: ad.status === 'PENDING_APPROVAL'
+        ? 'Advertisement updated successfully and submitted for admin approval!'
+        : 'Advertisement updated successfully!',
       ad: { ...ad.toObject(), id: ad.adId },
     });
   } catch (error) {
