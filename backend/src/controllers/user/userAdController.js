@@ -44,8 +44,12 @@ const attachRealPosterProfile = async (adDoc) => {
       const User = require('../../models/User');
       const userDoc = await User.findOne({ userId: obj.posterId });
       if (userDoc) {
-        if (userDoc.name) obj.posterName = userDoc.name;
-        if (userDoc.phone) obj.posterPhone = userDoc.phone;
+        if (userDoc.name && (!obj.posterName || obj.posterName === 'Seller')) {
+          obj.posterName = userDoc.name;
+        }
+        if (userDoc.phone && userDoc.phone !== '+91 98765 43210' && (!obj.posterPhone || obj.posterPhone === '+91 98765 43210')) {
+          obj.posterPhone = userDoc.phone;
+        }
       }
     }
   } catch (e) {
@@ -201,8 +205,8 @@ const postAd = async (req, res) => {
       mainCategory = 'Services';
     }
 
-    const realPosterName = (posterName || req.user?.name || 'Seller').trim() || 'Seller';
-    const realPosterPhone = (posterPhone || req.user?.phone || '+91 98765 43210').trim() || '+91 98765 43210';
+    const realPosterName = (posterName || req.body.name || req.user?.name || 'Seller').trim() || 'Seller';
+    const realPosterPhone = (posterPhone || req.body.phone || req.user?.phone || '').trim();
     const realPosterId = (posterId || req.user?.userId || req.user?.id || 'USR-8821').trim() || 'USR-8821';
 
     const isLand = (propertySubType && /land|plot/i.test(propertySubType)) || (mainCategory && /layout|site|land|plot/i.test(mainCategory));
@@ -397,6 +401,11 @@ const updateMyAd = async (req, res) => {
       ad.rejectionReason = null;
       ad.rejectionNotes = null;
     }
+
+    const updatedPhone = (req.body.posterPhone || req.body.phone || '').trim();
+    if (updatedPhone) ad.posterPhone = updatedPhone;
+    const updatedName = (req.body.posterName || req.body.name || '').trim();
+    if (updatedName) ad.posterName = updatedName;
 
     const fieldsToUpdate = [
       'facing', 'plotNumber', 'bhk', 'bathrooms', 'furnishing', 'projectStatus',

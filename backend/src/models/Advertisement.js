@@ -20,8 +20,8 @@ const advertisementSchema = new mongoose.Schema(
     imageUrls: [{ type: String }],
 
     // Poster Details
-    posterName: { type: String, required: true },
-    posterPhone: { type: String, required: true },
+    posterName: { type: String, default: 'Seller' },
+    posterPhone: { type: String, default: '' },
     posterEmail: { type: String, default: '' },
     posterId: { type: String, required: true, index: true },
 
