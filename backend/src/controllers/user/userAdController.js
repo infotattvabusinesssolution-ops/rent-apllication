@@ -51,6 +51,16 @@ const attachRealPosterProfile = async (adDoc) => {
   } catch (e) {
     // Ignore lookup errors
   }
+
+  // Schema hygiene: If this is a land / plot, ensure house attributes are never populated
+  const isLand = (obj.propertySubType && /land|plot/i.test(obj.propertySubType)) || (obj.category && /layout|site|land|plot/i.test(obj.category));
+  if (isLand) {
+    obj.bhk = null;
+    obj.furnishing = null;
+    obj.bathrooms = null;
+    obj.houseType = null;
+  }
+
   return { ...obj, id: obj.adId || obj.id };
 };
 
@@ -195,6 +205,14 @@ const postAd = async (req, res) => {
     const realPosterPhone = (posterPhone || req.user?.phone || '+91 98765 43210').trim() || '+91 98765 43210';
     const realPosterId = (posterId || req.user?.userId || req.user?.id || 'USR-8821').trim() || 'USR-8821';
 
+    const isLand = (propertySubType && /land|plot/i.test(propertySubType)) || (mainCategory && /layout|site|land|plot/i.test(mainCategory));
+    if (isLand) {
+      req.body.bhk = null;
+      req.body.furnishing = null;
+      req.body.bathrooms = null;
+      req.body.houseType = null;
+    }
+
     const newAd = await Advertisement.create({
       adId,
       title: title || 'New Listing',
@@ -290,7 +308,17 @@ const getMyAds = async (req, res) => {
 
     const ads = await Advertisement.find(query).sort({ createdAt: -1 });
 
-    const formatted = ads.map((a) => ({ ...a.toObject(), id: a.adId }));
+    const formatted = ads.map((a) => {
+      const obj = a.toObject ? a.toObject() : { ...a };
+      const isLand = (obj.propertySubType && /land|plot/i.test(obj.propertySubType)) || (obj.category && /layout|site|land|plot/i.test(obj.category));
+      if (isLand) {
+        obj.bhk = null;
+        obj.furnishing = null;
+        obj.bathrooms = null;
+        obj.houseType = null;
+      }
+      return { ...obj, id: a.adId };
+    });
     return res.json({ success: true, data: formatted, total: formatted.length });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -320,6 +348,21 @@ const updateMyAd = async (req, res) => {
         success: false,
         message: 'Forbidden: You can only edit your own advertisements.',
       });
+    }
+
+    const isLand = (ad.propertySubType && /land|plot/i.test(ad.propertySubType)) ||
+      (ad.category && /layout|site|land|plot/i.test(ad.category)) ||
+      (req.body.propertySubType && /land|plot/i.test(req.body.propertySubType));
+
+    if (isLand) {
+      ad.bhk = null;
+      ad.furnishing = null;
+      ad.bathrooms = null;
+      ad.houseType = null;
+      delete req.body.bhk;
+      delete req.body.furnishing;
+      delete req.body.bathrooms;
+      delete req.body.houseType;
     }
 
     const { title, price, location, description, dimensions, imageUrls, status } = req.body;
