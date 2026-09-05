@@ -1,5 +1,33 @@
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const Advertisement = require('../../models/Advertisement');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_homescooter_2026';
+
+const extractRequesterUserId = (req) => {
+  // 1. Check req.user from auth middleware
+  if (req.user?.userId) return String(req.user.userId).trim();
+  if (req.user?.id) return String(req.user.id).trim();
+
+  // 2. Check Authorization Bearer token header
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded && decoded.id) return String(decoded.id).trim();
+    } catch (e) {
+      // ignore invalid token decoding
+    }
+  }
+
+  // 3. Check query param or request body
+  if (req.query && req.query.userId) return String(req.query.userId).trim();
+  if (req.query && req.query.posterId) return String(req.query.posterId).trim();
+  if (req.body && req.body.userId) return String(req.body.userId).trim();
+  if (req.body && req.body.posterId) return String(req.body.posterId).trim();
+
+  return null;
+};
 
 const buildAdQuery = (id) => {
   if (mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id) {
@@ -239,7 +267,18 @@ const postAd = async (req, res) => {
 const getMyAds = async (req, res) => {
   try {
     const { status } = req.query;
-    const query = {};
+    const requesterId = extractRequesterUserId(req);
+
+    if (!requesterId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication or user ID is required to fetch your advertisements.',
+        data: [],
+        total: 0,
+      });
+    }
+
+    const query = { posterId: requesterId };
 
     if (status && status !== 'ALL') {
       if (status === 'PENDING_APPROVAL' || status === 'PENDING') {
@@ -263,10 +302,27 @@ const getMyAds = async (req, res) => {
 const updateMyAd = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, price, location, description, dimensions, imageUrls, status } = req.body;
+    const requesterId = extractRequesterUserId(req);
+
+    if (!requesterId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please log in to edit listings.',
+      });
+    }
 
     const ad = await Advertisement.findOne(buildAdQuery(id));
     if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+
+    // Strict Ownership Enforcement: Users can ONLY edit their own ads
+    if (ad.posterId && String(ad.posterId).trim() !== requesterId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You can only edit your own advertisements.',
+      });
+    }
+
+    const { title, price, location, description, dimensions, imageUrls, status } = req.body;
 
     if (title) ad.title = title;
     if (price) ad.price = Number(price);
@@ -327,9 +383,27 @@ const updateMyAd = async (req, res) => {
 const deleteMyAd = async (req, res) => {
   try {
     const { id } = req.params;
+    const requesterId = extractRequesterUserId(req);
 
-    const ad = await Advertisement.findOneAndDelete(buildAdQuery(id));
+    if (!requesterId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please log in to delete listings.',
+      });
+    }
+
+    const ad = await Advertisement.findOne(buildAdQuery(id));
     if (!ad) return res.status(404).json({ success: false, message: 'Ad not found' });
+
+    // Strict Ownership Enforcement: Users can ONLY delete their own ads
+    if (ad.posterId && String(ad.posterId).trim() !== requesterId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You can only delete your own advertisements.',
+      });
+    }
+
+    await Advertisement.deleteOne(buildAdQuery(id));
 
     return res.json({
       success: true,
