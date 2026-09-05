@@ -329,7 +329,22 @@ const updateMyAd = async (req, res) => {
     if (location) ad.location = location;
     if (description) ad.description = description;
     if (dimensions !== undefined) ad.dimensions = dimensions;
-    if (imageUrls) ad.imageUrls = imageUrls;
+
+    let finalImageUrls = [];
+    if (imageUrls) {
+      const urlsArray = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+      finalImageUrls = urlsArray.filter((u) => typeof u === 'string' && u.trim().length > 0);
+    }
+    if (req.files && req.files.length > 0) {
+      const { uploadToCloudinary } = require('../../utils/cloudinary');
+      for (const file of req.files) {
+        const cloudinaryUrl = await uploadToCloudinary(file, 'homescooter_ads');
+        finalImageUrls.push(cloudinaryUrl);
+      }
+    }
+    if (finalImageUrls.length > 0) {
+      ad.imageUrls = finalImageUrls;
+    }
 
     if (status === 'UNPUBLISHED') {
       ad.status = 'UNPUBLISHED';
