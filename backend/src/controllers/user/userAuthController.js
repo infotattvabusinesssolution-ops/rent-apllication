@@ -323,8 +323,6 @@ const forgotPassword = async (req, res) => {
       success: true,
       message: `Password reset instructions and verification code have been sent to ${user.email}.`,
       email: user.email,
-      otp: process.env.NODE_ENV === 'development' ? otp : undefined,
-      resetUrl: process.env.NODE_ENV === 'development' ? resetUrl : undefined,
     });
   } catch (error) {
     console.error('Forgot password error:', error);
