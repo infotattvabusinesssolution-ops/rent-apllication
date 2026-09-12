@@ -487,7 +487,7 @@ const resetPasswordWebView = async (req, res) => {
         body {
           margin: 0;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
+          background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -505,7 +505,7 @@ const resetPasswordWebView = async (req, res) => {
           border: 1px solid #e2e8f0;
         }
         .header {
-          background: linear-gradient(135deg, #0F766E 0%, #2563EB 100%);
+          background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
           padding: 28px 24px;
           text-align: center;
           color: white;
@@ -524,11 +524,11 @@ const resetPasswordWebView = async (req, res) => {
           padding: 28px 24px;
         }
         .user-tag {
-          background: #f1f5f9;
+          background: #eff6ff;
           padding: 10px 14px;
           border-radius: 10px;
           font-size: 13px;
-          color: #475569;
+          color: #1d4ed8;
           margin-bottom: 20px;
           display: flex;
           align-items: center;
@@ -556,20 +556,20 @@ const resetPasswordWebView = async (req, res) => {
           transition: border-color 0.2s;
         }
         input[type="password"]:focus, input[type="text"]:focus {
-          border-color: #0f766e;
-          box-shadow: 0 0 0 3px rgba(15,118,110,0.15);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
         }
         .btn {
           width: 100%;
           padding: 14px;
-          background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+          background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
           color: white;
           border: none;
           border-radius: 12px;
           font-size: 16px;
           font-weight: 700;
           cursor: pointer;
-          box-shadow: 0 4px 14px rgba(15,118,110,0.25);
+          box-shadow: 0 4px 14px rgba(37,99,235,0.25);
           transition: opacity 0.2s;
         }
         .btn:hover { opacity: 0.95; }
@@ -624,7 +624,7 @@ const resetPasswordWebView = async (req, res) => {
 
         <div class="success-box" id="successSection">
           <div class="success-icon">🎉</div>
-          <h2 style="color: #0f766e; margin: 0 0 8px;">Password Updated!</h2>
+          <h2 style="color: #2563EB; margin: 0 0 8px;">Password Updated!</h2>
           <p style="color: #64748b; font-size: 14px; line-height: 1.5;">
             Your password has been changed successfully. You can now open the <strong>Home & Scooter</strong> app and log in with your new password.
           </p>

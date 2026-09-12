@@ -69,7 +69,7 @@ const sendPasswordResetEmail = async ({ toEmail, userName, resetOtp, resetUrl })
       border: 1px solid #e2e8f0;
     }
     .header {
-      background: linear-gradient(135deg, #0F766E 0%, #2563EB 100%);
+      background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
       padding: 36px 30px;
       text-align: center;
       color: #ffffff;
@@ -101,8 +101,8 @@ const sendPasswordResetEmail = async ({ toEmail, userName, resetOtp, resetUrl })
       margin-bottom: 24px;
     }
     .otp-box {
-      background-color: #f8fafc;
-      border: 2px dashed #cbd5e1;
+      background-color: #eff6ff;
+      border: 2px dashed #93c5fd;
       border-radius: 12px;
       padding: 20px;
       text-align: center;
@@ -113,19 +113,19 @@ const sendPasswordResetEmail = async ({ toEmail, userName, resetOtp, resetUrl })
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: #64748b;
+      color: #1d4ed8;
       margin-bottom: 8px;
     }
     .otp-code {
       font-size: 34px;
       font-weight: 800;
       letter-spacing: 8px;
-      color: #0f766e;
+      color: #2563EB;
       font-family: 'Courier New', monospace;
     }
     .otp-expiry {
       font-size: 12px;
-      color: #94a3b8;
+      color: #64748b;
       margin-top: 6px;
     }
     .divider {
@@ -157,7 +157,7 @@ const sendPasswordResetEmail = async ({ toEmail, userName, resetOtp, resetUrl })
     }
     .button {
       display: inline-block;
-      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+      background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
       color: #ffffff !important;
       text-decoration: none;
       padding: 14px 32px;
@@ -165,7 +165,7 @@ const sendPasswordResetEmail = async ({ toEmail, userName, resetOtp, resetUrl })
       font-size: 15px;
       font-weight: 700;
       letter-spacing: 0.3px;
-      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     }
     .fallback-url {
       font-size: 12px;
