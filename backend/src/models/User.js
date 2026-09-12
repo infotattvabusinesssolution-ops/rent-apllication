@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
     rejectedAdsCount: { type: Number, default: 0 },
     reportsCount: { type: Number, default: 0 },
     joinedDate: { type: Date, default: Date.now },
+    resetOtp: { type: String, default: null },
+    resetOtpExpires: { type: Date, default: null },
+    resetToken: { type: String, default: null },
+    resetTokenExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );

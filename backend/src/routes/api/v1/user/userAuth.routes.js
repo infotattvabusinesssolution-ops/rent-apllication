@@ -9,6 +9,7 @@ const {
   logoutUser,
   forgotPassword,
   resetPassword,
+  resetPasswordWebView,
   deleteAccount,
 } = require('../../../../controllers/user/userAuthController');
 const upload = require('../../../../middleware/uploadMiddleware');
@@ -20,6 +21,7 @@ router.put('/profile', upload.single('avatar'), updateUserProfile);
 router.post('/logout', logoutUser);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.get('/reset-password-web', resetPasswordWebView);
 router.put('/location', updateUserLocation);
 router.delete('/account', deleteAccount);
 
