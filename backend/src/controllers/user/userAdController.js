@@ -73,12 +73,18 @@ const attachRealPosterProfile = async (adDoc) => {
 const getAds = async (req, res) => {
   try {
     const { category, search, page = 1, limit = 20 } = req.query;
+    // Exclude private Cinema Card applications from public marketplace listings
     const query = {
       status: 'APPROVED',
+      category: { $nin: ['CINEMA CARD', 'Cinema Card', 'cinema card'] },
+      isCinemaCard: { $ne: true },
     };
 
-
     if (category && category !== 'ALL') {
+      if (/cinema\s*card/i.test(category)) {
+        // Cinema card is private application, never show as public listings
+        return res.json({ success: true, data: [], total: 0, page: Number(page) });
+      }
       query.$or = [
         { category: { $regex: category, $options: 'i' } },
         { propertySubType: { $regex: category, $options: 'i' } },
@@ -203,11 +209,17 @@ const postAd = async (req, res) => {
     } else if (category && (category === 'Services' || category.includes('Repair') || category.includes('Cleaning') || category.includes('Packers') || category.includes('Renovation') || category.includes('Legal'))) {
       propertySubType = category === 'Services' ? null : category;
       mainCategory = 'Services';
+    } else if (category && /cinema\s*card/i.test(category)) {
+      propertySubType = 'CINEMA CARD';
+      mainCategory = 'CINEMA CARD';
     }
 
-    const realPosterName = (posterName || req.body.name || req.user?.name || 'Seller').trim() || 'Seller';
-    const realPosterPhone = (posterPhone || req.body.phone || req.user?.phone || '').trim();
+    const isCinemaCard = req.body.isCinemaCard === true || req.body.isCinemaCard === 'true' || (category && /cinema\s*card/i.test(category));
+    const realPosterName = (req.body.applicantName || posterName || req.body.name || req.user?.name || 'Applicant').trim() || 'Applicant';
+    const realPosterPhone = (req.body.whatsappNumber || posterPhone || req.body.phone || req.user?.phone || '').trim();
     const realPosterId = (posterId || req.user?.userId || req.user?.id || 'USR-8821').trim() || 'USR-8821';
+    const applicantPlace = (req.body.place || location || 'Bangalore').trim();
+    const referredBy = req.body.referredBy ? req.body.referredBy.trim() : null;
 
     const isLand = (propertySubType && /land|plot/i.test(propertySubType)) || (mainCategory && /layout|site|land|plot/i.test(mainCategory));
     if (isLand) {
@@ -219,13 +231,13 @@ const postAd = async (req, res) => {
 
     const newAd = await Advertisement.create({
       adId,
-      title: title || 'New Listing',
+      title: title || (isCinemaCard ? `Cinema Card - ${realPosterName}` : 'New Listing'),
       description: description || 'No description',
       price: Number(price) || 0,
       priceUnit: '₹',
-      location: location || 'Bangalore',
-      city: 'Bangalore',
-      category: mainCategory,
+      location: applicantPlace,
+      city: applicantPlace,
+      category: isCinemaCard ? 'CINEMA CARD' : mainCategory,
       propertySubType,
       dimensions: dimensions || req.body.superBuiltupArea || req.body.plotArea || null,
       facing: req.body.facing || null,
@@ -256,6 +268,14 @@ const postAd = async (req, res) => {
       salaryTo: req.body.salaryTo || null,
       salaryPeriod: req.body.salaryPeriod || null,
       serviceType: req.body.serviceType || req.body.type || null,
+
+      // Cinema Card Specific Fields
+      applicantName: realPosterName,
+      whatsappNumber: realPosterPhone,
+      place: applicantPlace,
+      referredBy: referredBy,
+      isCinemaCard: isCinemaCard,
+
       specifications: req.body.specifications || {},
       imageUrls: finalImageUrls,
       posterName: realPosterName,
@@ -267,15 +287,19 @@ const postAd = async (req, res) => {
     const { sendNotification } = require('../../utils/createNotification');
     await sendNotification({
       recipientType: 'ADMIN',
-      title: 'New Ad Pending Review 📦',
-      desc: `New listing '${newAd.title}' submitted by ${realPosterName}`,
-      type: 'ad',
+      title: isCinemaCard ? 'New Cinema Card Application 🎬' : 'New Ad Pending Review 📦',
+      desc: isCinemaCard
+        ? `New Cinema Card registration from ${realPosterName} (${applicantPlace})`
+        : `New listing '${newAd.title}' submitted by ${realPosterName}`,
+      type: isCinemaCard ? 'cinema_card' : 'ad',
       path: '/ads/pending',
     });
 
     return res.status(201).json({
       success: true,
-      message: 'Your advertisement has been submitted successfully and is pending admin approval!',
+      message: isCinemaCard
+        ? 'Your Cinema Card application has been submitted successfully to the admin!'
+        : 'Your advertisement has been submitted successfully and is pending admin approval!',
       ad: { ...newAd.toObject(), id: newAd.adId },
     });
 

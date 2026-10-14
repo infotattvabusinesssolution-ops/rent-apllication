@@ -92,6 +92,13 @@ const advertisementSchema = new mongoose.Schema(
     // Service Specific Metadata
     serviceType: { type: String, default: null },
 
+    // Cinema Card Specific Metadata
+    applicantName: { type: String, default: null },
+    whatsappNumber: { type: String, default: null },
+    place: { type: String, default: null },
+    referredBy: { type: String, default: null },
+    isCinemaCard: { type: Boolean, default: false },
+
     amenities: [{ type: String }],
     specifications: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
