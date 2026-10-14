@@ -46,6 +46,10 @@ const getAds = async (req, res) => {
         { posterName: { $regex: q, $options: 'i' } },
         { posterPhone: { $regex: q, $options: 'i' } },
         { location: { $regex: q, $options: 'i' } },
+        { applicantName: { $regex: q, $options: 'i' } },
+        { whatsappNumber: { $regex: q, $options: 'i' } },
+        { place: { $regex: q, $options: 'i' } },
+        { referredBy: { $regex: q, $options: 'i' } },
       ];
     }
 

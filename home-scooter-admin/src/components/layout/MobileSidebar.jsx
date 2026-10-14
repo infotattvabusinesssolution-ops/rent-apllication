@@ -19,12 +19,14 @@ import {
   LogOut,
   Building2,
   Bike,
+  Clapperboard,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/ads', label: 'All Ads', icon: Layers, badgeColor: 'bg-blue-600' },
   { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badgeColor: 'bg-amber-500' },
+  { path: '/cinema-cards', label: '🎬 Cinema Cards', icon: Clapperboard, badgeColor: 'bg-amber-600' },
   { path: '/banners', label: 'Banner Ads', icon: Image },
   { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard, badgeColor: 'bg-emerald-500' },
   { path: '/users', label: 'Users', icon: Users },

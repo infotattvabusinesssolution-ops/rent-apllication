@@ -30,6 +30,7 @@ import {
   Star,
   BookOpen,
   GraduationCap,
+  Clapperboard,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -47,6 +48,7 @@ const NAV_ITEMS = [
   { path: '/ads', label: 'All Ads', icon: Layers, badgeColor: 'bg-blue-600' },
   { path: '/ads/lucky-draw', label: 'Ads → Lucky Draw', icon: Gift, badgeColor: 'bg-rose-600' },
   { path: '/ads/pending', label: 'Pending Approvals', icon: Clock, badgeColor: 'bg-amber-500' },
+  { path: '/cinema-cards', label: '🎬 Cinema Cards', icon: Clapperboard, badgeColor: 'bg-amber-600' },
   { path: '/categories', label: 'Categories', icon: FolderTree },
   { path: '/banners', label: 'Banner Ads', icon: Image },
   { path: '/subscriptions', label: 'Subscriptions', icon: CreditCard, badgeColor: 'bg-emerald-500' },

@@ -17,6 +17,7 @@ import { LeadsList } from '../pages/LeadsList';
 import { ReportsList } from '../pages/ReportsList';
 import { VisitorWinList } from '../pages/VisitorWinList';
 import { CategoryManagement } from '../pages/CategoryManagement';
+import { CinemaCardList } from '../pages/CinemaCardList';
 import { Analytics } from '../pages/Analytics';
 import { Settings } from '../pages/Settings';
 
@@ -101,6 +102,7 @@ export const AppRoutes = () => {
         <Route path="ads/lucky-draw" element={<LuckyDrawEnquiries />} />
         <Route path="ads/pending" element={<PendingAds />} />
         <Route path="ads/:id" element={<AdDetail />} />
+        <Route path="cinema-cards" element={<CinemaCardList />} />
         <Route path="categories" element={<CategoryManagement />} />
         
         <Route path="banners" element={<BannerList />} />
