@@ -26,6 +26,7 @@ export const CATEGORIES = {
   CLEANING_PEST: 'Cleaning & Pest Control',
   PACKERS_MOVERS: 'Packers & Movers',
   LEGAL_SERVICES: 'Legal & Documentation',
+  CINEMA_CARD: 'CINEMA CARD',
   OTHERS: 'Others',
 };
 
@@ -52,6 +53,7 @@ export const CATEGORY_LIST = [
   CATEGORIES.LAYOUT_SITES,
   CATEGORIES.ELECTRIC_SCOOTERS,
   CATEGORIES.SERVICES,
+  CATEGORIES.CINEMA_CARD,
   CATEGORIES.OTHERS,
 ];
 

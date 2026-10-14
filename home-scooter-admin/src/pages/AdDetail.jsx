@@ -418,6 +418,48 @@ export const AdDetail = () => {
                   </div>
                 )}
 
+                {/* Cinema Card Specifics */}
+                {(ad.category === 'CINEMA CARD' || ad.category?.toUpperCase() === 'CINEMA CARD' || ad.isCinemaCard || ad.referredBy || ad.applicantName) && (
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-4 rounded-xl border border-amber-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🎬</span>
+                      <h5 className="text-xs font-black uppercase text-amber-900 tracking-wider">
+                        Cinema Card Application Details
+                      </h5>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 bg-white/90 rounded-lg border border-amber-100 shadow-xs">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase">Applicant Name</span>
+                        <p className="text-sm font-black text-slate-900 mt-0.5">{ad.applicantName || ad.posterName || 'N/A'}</p>
+                      </div>
+                      <div className="p-3 bg-white/90 rounded-lg border border-amber-100 shadow-xs flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-amber-700 uppercase">WhatsApp Number</span>
+                          <p className="text-sm font-black text-slate-900 mt-0.5">{ad.whatsappNumber || ad.posterPhone || 'N/A'}</p>
+                        </div>
+                        {(ad.whatsappNumber || ad.posterPhone) && (
+                          <a
+                            href={`https://wa.me/${String(ad.whatsappNumber || ad.posterPhone).replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
+                          >
+                            <span>Chat on WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
+                      <div className="p-3 bg-white/90 rounded-lg border border-amber-100 shadow-xs">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase">Place / Location</span>
+                        <p className="text-sm font-black text-slate-900 mt-0.5">{ad.place || ad.location || 'N/A'}</p>
+                      </div>
+                      <div className="p-3 bg-white/90 rounded-lg border border-amber-100 shadow-xs">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase">Referred By</span>
+                        <p className="text-sm font-black text-slate-900 mt-0.5">{ad.referredBy || 'Direct (None)'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Amenities pills */}
                 {ad.amenities && ad.amenities.length > 0 && (
                   <div className="mt-4">

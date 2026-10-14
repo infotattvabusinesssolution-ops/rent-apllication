@@ -467,6 +467,7 @@ export const CategoryManagement = () => {
                 <option value="BIKES_VEHICLE">Bikes & Vehicles Form</option>
                 <option value="BIKES_PARTS">Spare Parts & Bicycles Form</option>
                 <option value="JOBS">Jobs & Salary Form</option>
+                <option value="CINEMA_CARD">Cinema Card Application Form (Name, WhatsApp, Place, Referral, Photo)</option>
                 <option value="DEFAULT">Default Standard Form</option>
               </select>
             </div>
