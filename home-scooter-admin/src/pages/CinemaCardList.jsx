@@ -130,22 +130,41 @@ export const CinemaCardList = () => {
   });
 
   const uploadImageMutation = useMutation({
-    mutationFn: ({ id, file }) => adsApi.uploadCinemaCardImage(id, file),
+    mutationFn: ({ id, files }) => adsApi.uploadCinemaCardImage(id, files),
     onSuccess: (res) => {
-      toast.success('Cinema Card official image uploaded & approved! Live in all app listings. 🎉');
+      toast.success(res?.message || 'Cinema Card image(s) uploaded & approved! Live in all app listings. 🎉');
       queryClient.invalidateQueries(['cinemaCardAds']);
       queryClient.invalidateQueries(['cinemaCardAllStats']);
       queryClient.invalidateQueries(['ads']);
       if (selectedApp) {
         setSelectedApp((prev) => (prev ? {
           ...prev,
-          imageUrls: [res.imageUrl, ...(prev.imageUrls || []).filter((u) => u !== res.imageUrl)],
+          imageUrls: res.imageUrls || (res.imageUrl ? [res.imageUrl, ...(prev.imageUrls || [])] : prev.imageUrls),
           status: 'APPROVED',
         } : null));
       }
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload Cinema Card image');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload Cinema Card image(s)');
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: ({ id, imageUrl }) => adsApi.deleteCinemaCardImage(id, imageUrl),
+    onSuccess: (res, { imageUrl }) => {
+      toast.success('Image removed from Cinema Card');
+      queryClient.invalidateQueries(['cinemaCardAds']);
+      queryClient.invalidateQueries(['cinemaCardAllStats']);
+      queryClient.invalidateQueries(['ads']);
+      if (selectedApp) {
+        setSelectedApp((prev) => (prev ? {
+          ...prev,
+          imageUrls: (prev.imageUrls || []).filter((u) => u !== imageUrl),
+        } : null));
+      }
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to remove image');
     },
   });
 
@@ -338,6 +357,11 @@ export const CinemaCardList = () => {
                               alt={applicantName}
                               className="w-full h-full object-cover"
                             />
+                            {app.imageUrls && app.imageUrls.length > 1 && (
+                              <span className="absolute bottom-0 right-0 bg-slate-900/80 text-white text-[8px] font-black px-1 rounded-tl">
+                                +{app.imageUrls.length - 1}
+                              </span>
+                            )}
                             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[9px] font-bold">
                               Zoom
                             </div>
@@ -346,17 +370,18 @@ export const CinemaCardList = () => {
                           <label
                             onClick={(e) => e.stopPropagation()}
                             className="w-12 h-12 rounded-lg bg-amber-50 border border-dashed border-amber-300 flex flex-col items-center justify-center text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer shrink-0"
-                            title="Upload Official Cinema Card Image"
+                            title="Upload Official Cinema Card Images"
                           >
                             <input
                               type="file"
                               accept="image/*"
+                              multiple
                               className="hidden"
                               disabled={uploadImageMutation.isPending}
                               onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  uploadImageMutation.mutate({ id: app.id || app.adId, file });
+                                const files = e.target.files;
+                                if (files && files.length > 0) {
+                                  uploadImageMutation.mutate({ id: app.id || app.adId, files });
                                 }
                               }}
                             />
@@ -427,21 +452,22 @@ export const CinemaCardList = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Quick Upload Official Card Image */}
+                          {/* Quick Upload Official Card Images */}
                           <label
                             onClick={(e) => e.stopPropagation()}
                             className="p-1.5 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
-                            title="Upload / Change Official Card Image"
+                            title="Upload / Add Official Card Images"
                           >
                             <input
                               type="file"
                               accept="image/*"
+                              multiple
                               className="hidden"
                               disabled={uploadImageMutation.isPending}
                               onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  uploadImageMutation.mutate({ id: app.id || app.adId, file });
+                                const files = e.target.files;
+                                if (files && files.length > 0) {
+                                  uploadImageMutation.mutate({ id: app.id || app.adId, files });
                                 }
                               }}
                             />
@@ -520,63 +546,99 @@ export const CinemaCardList = () => {
               <div>{getStatusBadge(selectedApp.status)}</div>
             </div>
 
-            {/* Official Cinema Card Image (Set by Admin) */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+            {/* Official Cinema Card Images (Set by Admin) */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Official Cinema Card Image (Admin Managed)</span>
+                    <span>Official Cinema Card Images (Admin Managed)</span>
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Users register text details only. Admin uploads the official card image to publish it to all mobile app listings.
+                    Admin can upload multiple images (banner, card front & back, photos) to display in app listings.
                   </p>
                 </div>
                 {selectedApp.imageUrls && selectedApp.imageUrls.length > 0 && selectedApp.status === 'APPROVED' && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                    Live in App
+                    Live in App ({selectedApp.imageUrls.length})
                   </span>
                 )}
               </div>
 
               {selectedApp.imageUrls && selectedApp.imageUrls.length > 0 ? (
-                <div className="space-y-2">
-                  <div
-                    onClick={() => setLightboxImage(selectedApp.imageUrls[0])}
-                    className="w-full h-52 bg-slate-900 rounded-xl overflow-hidden border border-slate-200 cursor-zoom-in relative group"
-                  >
-                    <img
-                      src={selectedApp.imageUrls[0]}
-                      alt="Cinema Card Photo"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
-                      Click to view full image
-                    </div>
+                <div className="space-y-3">
+                  {/* Grid of uploaded images */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {selectedApp.imageUrls.map((url, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group bg-slate-900 rounded-xl overflow-hidden border border-slate-200 aspect-video shadow-xs"
+                      >
+                        <img
+                          src={url}
+                          alt={`Cinema Card ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1.5 left-1.5 bg-blue-600/90 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                            Cover
+                          </span>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => setLightboxImage(url)}
+                            className="p-1.5 bg-white/90 hover:bg-white text-slate-800 rounded-lg text-xs font-bold shadow transition-transform active:scale-95 cursor-zoom-in"
+                            title="View Full Image"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm('Delete this image from Cinema Card?')) {
+                                deleteImageMutation.mutate({
+                                  id: selectedApp.id || selectedApp.adId,
+                                  imageUrl: url,
+                                });
+                              }
+                            }}
+                            disabled={deleteImageMutation.isPending}
+                            className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow transition-transform active:scale-95"
+                            title="Delete Image"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between">
+
+                  {/* Add more images button */}
+                  <div className="flex items-center justify-between pt-1">
                     <span className="text-[11px] text-slate-500 font-medium">
-                      Image uploaded and live in app listings.
+                      {selectedApp.imageUrls.length} image{selectedApp.imageUrls.length > 1 ? 's' : ''} uploaded.
                     </span>
-                    <label className="px-3 py-1.5 bg-white border border-slate-300 hover:border-blue-500 text-slate-700 hover:text-blue-600 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors">
+                    <label className="px-3 py-1.5 bg-white border border-blue-300 hover:border-blue-600 text-blue-700 hover:bg-blue-50 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors">
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         disabled={uploadImageMutation.isPending}
                         onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
                             uploadImageMutation.mutate({
                               id: selectedApp.id || selectedApp.adId,
-                              file,
+                              files,
                             });
                           }
                         }}
                       />
                       <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{uploadImageMutation.isPending ? 'Uploading...' : 'Replace Image'}</span>
+                      <span>{uploadImageMutation.isPending ? 'Uploading...' : '+ Add More Images'}</span>
                     </label>
                   </div>
                 </div>
@@ -587,10 +649,10 @@ export const CinemaCardList = () => {
                   </div>
                   <div>
                     <h5 className="text-xs font-bold text-slate-900">
-                      No Cinema Card image uploaded yet
+                      No Cinema Card images uploaded yet
                     </h5>
                     <p className="text-[11px] text-slate-600 max-w-sm mx-auto mt-0.5">
-                      Upload the official card banner or ID card photo for this applicant. Once uploaded, it will automatically approve and appear in all mobile app listings.
+                      Upload one or multiple official card images (card design, banner, passes). Once uploaded, it will automatically approve and appear in all mobile app listings.
                     </p>
                   </div>
                   <div>
@@ -598,20 +660,21 @@ export const CinemaCardList = () => {
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         disabled={uploadImageMutation.isPending}
                         onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
                             uploadImageMutation.mutate({
                               id: selectedApp.id || selectedApp.adId,
-                              file,
+                              files,
                             });
                           }
                         }}
                       />
                       <UploadCloud className="w-4 h-4" />
-                      <span>{uploadImageMutation.isPending ? 'Uploading to CDN...' : 'Upload Official Card Image'}</span>
+                      <span>{uploadImageMutation.isPending ? 'Uploading to CDN...' : 'Upload Official Card Images'}</span>
                     </label>
                   </div>
                 </div>

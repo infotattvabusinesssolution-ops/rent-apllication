@@ -104,14 +104,14 @@ export const AdDetail = () => {
   });
 
   const uploadCinemaImageMutation = useMutation({
-    mutationFn: (file) => adsApi.uploadCinemaCardImage(id, file),
+    mutationFn: (files) => adsApi.uploadCinemaCardImage(id, files),
     onSuccess: (res) => {
-      toast.success('Cinema Card official image uploaded & approved! Live in all app listings. 🎉');
+      toast.success(res?.message || 'Cinema Card image(s) uploaded & approved! Live in all app listings. 🎉');
       queryClient.invalidateQueries(['adDetail', id]);
       queryClient.invalidateQueries(['ads']);
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload Cinema Card image');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload Cinema Card image(s)');
     },
   });
 
@@ -235,15 +235,16 @@ export const AdDetail = () => {
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       disabled={uploadCinemaImageMutation.isPending}
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) uploadCinemaImageMutation.mutate(file);
+                        const files = e.target.files;
+                        if (files && files.length > 0) uploadCinemaImageMutation.mutate(files);
                       }}
                     />
                     <UploadCloud className="w-4 h-4" />
-                    <span>{uploadCinemaImageMutation.isPending ? 'Uploading to CDN...' : 'Upload Official Card Image'}</span>
+                    <span>{uploadCinemaImageMutation.isPending ? 'Uploading to CDN...' : 'Upload Official Card Image(s)'}</span>
                   </label>
                 </div>
               </div>
@@ -624,15 +625,16 @@ export const AdDetail = () => {
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       disabled={uploadCinemaImageMutation.isPending}
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) uploadCinemaImageMutation.mutate(file);
+                        const files = e.target.files;
+                        if (files && files.length > 0) uploadCinemaImageMutation.mutate(files);
                       }}
                     />
                     <UploadCloud className="w-4 h-4" />
-                    <span>{uploadCinemaImageMutation.isPending ? 'Uploading to CDN...' : (ad.imageUrls?.length > 0 ? 'Change / Replace Card Image' : 'Upload Card Image & Publish to App')}</span>
+                    <span>{uploadCinemaImageMutation.isPending ? 'Uploading to CDN...' : (ad.imageUrls?.length > 0 ? '+ Add / Upload More Card Images' : 'Upload Card Images & Publish to App')}</span>
                   </label>
                 </div>
               )}

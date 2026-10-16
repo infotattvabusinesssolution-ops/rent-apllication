@@ -352,7 +352,7 @@ const uploadLuckyDrawImage = async (req, res) => {
   }
 };
 
-// @desc    Upload / Set Cinema Card image by Admin (Cloudinary CDN) and approve for marketplace
+// @desc    Upload / Set Cinema Card image(s) by Admin (Cloudinary CDN) and approve for marketplace
 // @route   POST /api/v1/admin/ads/:id/cinema-card-image
 // @access  Private (Admin)
 const uploadCinemaCardImage = async (req, res) => {
@@ -364,25 +364,82 @@ const uploadCinemaCardImage = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Cinema Card application not found' });
     }
 
-    let imageUrl = null;
-    if (req.file) {
-      imageUrl = await uploadToCloudinary(req.file, 'homescooter_cinema_cards');
-    } else if (req.body.image && typeof req.body.image === 'string') {
-      imageUrl = await uploadToCloudinary(req.body.image, 'homescooter_cinema_cards');
+    const filesToUpload = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      filesToUpload.push(...req.files);
+    } else if (req.file) {
+      filesToUpload.push(req.file);
     }
 
-    if (!imageUrl) {
-      return res.status(400).json({ success: false, message: 'No valid image provided' });
+    const uploadedUrls = [];
+    for (const f of filesToUpload) {
+      const url = await uploadToCloudinary(f, 'homescooter_cinema_cards');
+      if (url) uploadedUrls.push(url);
     }
 
-    ad.imageUrls = [imageUrl, ...(ad.imageUrls || []).filter((u) => u !== imageUrl)];
+    if (req.body.image && typeof req.body.image === 'string') {
+      const url = await uploadToCloudinary(req.body.image, 'homescooter_cinema_cards');
+      if (url) uploadedUrls.push(url);
+    }
+    if (req.body.images) {
+      const imgs = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+      for (const img of imgs) {
+        if (typeof img === 'string') {
+          const url = await uploadToCloudinary(img, 'homescooter_cinema_cards');
+          if (url) uploadedUrls.push(url);
+        }
+      }
+    }
+
+    if (uploadedUrls.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid image(s) provided' });
+    }
+
+    const currentUrls = ad.imageUrls || [];
+    const combinedUrls = [...currentUrls];
+    for (const u of uploadedUrls) {
+      if (!combinedUrls.includes(u)) {
+        combinedUrls.push(u);
+      }
+    }
+
+    ad.imageUrls = combinedUrls;
     ad.status = 'APPROVED';
     await ad.save();
 
     return res.json({
       success: true,
-      message: 'Cinema Card image uploaded and approved! It will now appear in all marketplace listings in the app.',
-      imageUrl,
+      message: `${uploadedUrls.length} Cinema Card image(s) uploaded and approved! Live in all app listings.`,
+      imageUrls: ad.imageUrls,
+      ad: { ...ad.toObject(), id: ad.adId },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete a specific image from Cinema Card
+// @route   DELETE /api/v1/admin/ads/:id/cinema-card-image
+// @access  Private (Admin)
+const deleteCinemaCardImage = async (req, res) => {
+  try {
+    const ad = await Advertisement.findOne(buildAdQuery(req.params.id));
+    if (!ad) {
+      return res.status(404).json({ success: false, message: 'Cinema Card application not found' });
+    }
+
+    const imageUrl = req.body.imageUrl || req.query.imageUrl;
+    if (!imageUrl) {
+      return res.status(400).json({ success: false, message: 'imageUrl is required' });
+    }
+
+    ad.imageUrls = (ad.imageUrls || []).filter((u) => u !== imageUrl);
+    await ad.save();
+
+    return res.json({
+      success: true,
+      message: 'Image removed from Cinema Card successfully',
+      imageUrls: ad.imageUrls,
       ad: { ...ad.toObject(), id: ad.adId },
     });
   } catch (error) {
@@ -400,6 +457,7 @@ module.exports = {
   updateLuckyDrawStatus,
   uploadLuckyDrawImage,
   uploadCinemaCardImage,
+  deleteCinemaCardImage,
   unpublishAd,
   deleteAd,
 };

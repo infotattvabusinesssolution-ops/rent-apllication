@@ -40,14 +40,31 @@ export const adsApi = {
     });
   },
 
-  uploadCinemaCardImage: async (id, fileOrBase64) => {
-    if (typeof fileOrBase64 === 'string' && (fileOrBase64.startsWith('http') || fileOrBase64.startsWith('data:'))) {
-      return await axiosClient.post(`/api/v1/admin/ads/${id}/cinema-card-image`, { image: fileOrBase64 });
+  uploadCinemaCardImage: async (id, fileOrFiles) => {
+    // If it's a FileList or Array of Files
+    if (fileOrFiles instanceof FileList || Array.isArray(fileOrFiles)) {
+      const formData = new FormData();
+      for (let i = 0; i < fileOrFiles.length; i++) {
+        formData.append('images', fileOrFiles[i]);
+      }
+      return await axiosClient.post(`/api/v1/admin/ads/${id}/cinema-card-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+
+    if (typeof fileOrFiles === 'string' && (fileOrFiles.startsWith('http') || fileOrFiles.startsWith('data:'))) {
+      return await axiosClient.post(`/api/v1/admin/ads/${id}/cinema-card-image`, { image: fileOrFiles });
     }
     const formData = new FormData();
-    formData.append('image', fileOrBase64);
+    formData.append('image', fileOrFiles);
     return await axiosClient.post(`/api/v1/admin/ads/${id}/cinema-card-image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  deleteCinemaCardImage: async (id, imageUrl) => {
+    return await axiosClient.delete(`/api/v1/admin/ads/${id}/cinema-card-image`, {
+      data: { imageUrl },
     });
   },
 

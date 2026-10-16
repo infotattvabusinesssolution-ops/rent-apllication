@@ -11,6 +11,7 @@ const {
   updateLuckyDrawStatus,
   uploadLuckyDrawImage,
   uploadCinemaCardImage,
+  deleteCinemaCardImage,
   unpublishAd,
   deleteAd,
 } = require('../../../../controllers/adsController');
@@ -24,7 +25,8 @@ router.patch('/:id/reject', protectAdmin, rejectAd);
 router.patch('/:id/badges', protectAdmin, updateBadges);
 router.patch('/:id/lucky-draw', protectAdmin, updateLuckyDrawStatus);
 router.post('/:id/lucky-draw-image', protectAdmin, upload.single('image'), uploadLuckyDrawImage);
-router.post('/:id/cinema-card-image', protectAdmin, upload.single('image'), uploadCinemaCardImage);
+router.post('/:id/cinema-card-image', protectAdmin, upload.any(), uploadCinemaCardImage);
+router.delete('/:id/cinema-card-image', protectAdmin, deleteCinemaCardImage);
 router.patch('/:id/unpublish', protectAdmin, unpublishAd);
 router.delete('/:id', protectAdmin, deleteAd);
 
