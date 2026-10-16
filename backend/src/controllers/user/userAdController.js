@@ -72,7 +72,7 @@ const attachRealPosterProfile = async (adDoc) => {
 // @route   GET /api/v1/user/ads
 const getAds = async (req, res) => {
   try {
-    const { category, search, page = 1, limit = 20 } = req.query;
+    const { category, search, page = 1, limit } = req.query;
     // Exclude private Cinema Card applications from public marketplace listings
     const query = {
       status: 'APPROVED',
@@ -101,10 +101,15 @@ const getAds = async (req, res) => {
     }
 
     const total = await Advertisement.countDocuments(query);
-    const ads = await Advertisement.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const hasLimit = limit !== undefined && limit !== null && limit !== '' && limit !== 'all' && limit !== '0' && Number(limit) !== 0;
+    const limitNum = hasLimit ? Math.max(1, parseInt(limit, 10)) : null;
+
+    let adQuery = Advertisement.find(query).sort({ createdAt: -1 });
+    if (hasLimit && limitNum) {
+      adQuery = adQuery.skip((pageNum - 1) * limitNum).limit(limitNum);
+    }
+    const ads = await adQuery;
 
     const Favorite = require('../../models/Favorite');
     const reqUserId = req.query.userId || req.user?.id || req.user?.userId || 'USR-3894';
@@ -121,7 +126,20 @@ const getAds = async (req, res) => {
       })
     );
 
-    return res.json({ success: true, data: formatted, total, page: Number(page) });
+    return res.json({
+      success: true,
+      data: formatted,
+      total,
+      page: pageNum,
+      totalPages: hasLimit && limitNum ? Math.ceil(total / limitNum) : 1,
+      limit: limitNum || total,
+      pagination: {
+        total,
+        page: pageNum,
+        pages: hasLimit && limitNum ? Math.ceil(total / limitNum) : 1,
+        limit: limitNum || total,
+      },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
