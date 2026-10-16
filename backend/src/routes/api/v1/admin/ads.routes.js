@@ -10,6 +10,7 @@ const {
   updateBadges,
   updateLuckyDrawStatus,
   uploadLuckyDrawImage,
+  uploadCinemaCardImage,
   unpublishAd,
   deleteAd,
 } = require('../../../../controllers/adsController');
@@ -23,6 +24,7 @@ router.patch('/:id/reject', protectAdmin, rejectAd);
 router.patch('/:id/badges', protectAdmin, updateBadges);
 router.patch('/:id/lucky-draw', protectAdmin, updateLuckyDrawStatus);
 router.post('/:id/lucky-draw-image', protectAdmin, upload.single('image'), uploadLuckyDrawImage);
+router.post('/:id/cinema-card-image', protectAdmin, upload.single('image'), uploadCinemaCardImage);
 router.patch('/:id/unpublish', protectAdmin, unpublishAd);
 router.delete('/:id', protectAdmin, deleteAd);
 

@@ -73,31 +73,53 @@ const attachRealPosterProfile = async (adDoc) => {
 const getAds = async (req, res) => {
   try {
     const { category, search, page = 1, limit } = req.query;
-    // Exclude private Cinema Card applications from public marketplace listings
+
+    // Approved marketplace listings query:
+    // Regular ads are shown if status === 'APPROVED'.
+    // Cinema cards are included in all listings once approved AND their official image is uploaded by admin!
     const query = {
       status: 'APPROVED',
-      category: { $nin: ['CINEMA CARD', 'Cinema Card', 'cinema card'] },
-      isCinemaCard: { $ne: true },
+      $or: [
+        {
+          isCinemaCard: { $ne: true },
+          category: { $nin: ['CINEMA CARD', 'Cinema Card', 'cinema card'] },
+        },
+        {
+          $or: [
+            { isCinemaCard: true },
+            { category: { $in: ['CINEMA CARD', 'Cinema Card', 'cinema card'] } },
+          ],
+          imageUrls: { $exists: true, $not: { $size: 0 } },
+        },
+      ],
     };
 
+    const andConditions = [];
+
     if (category && category !== 'ALL') {
-      if (/cinema\s*card/i.test(category)) {
-        // Cinema card is private application, never show as public listings
-        return res.json({ success: true, data: [], total: 0, page: Number(page) });
-      }
-      query.$or = [
-        { category: { $regex: category, $options: 'i' } },
-        { propertySubType: { $regex: category, $options: 'i' } },
-      ];
+      andConditions.push({
+        $or: [
+          { category: { $regex: category, $options: 'i' } },
+          { propertySubType: { $regex: category, $options: 'i' } },
+        ],
+      });
     }
 
     if (search) {
       const q = search.trim();
-      query.$or = [
-        { title: { $regex: q, $options: 'i' } },
-        { location: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } },
-      ];
+      andConditions.push({
+        $or: [
+          { title: { $regex: q, $options: 'i' } },
+          { location: { $regex: q, $options: 'i' } },
+          { description: { $regex: q, $options: 'i' } },
+          { applicantName: { $regex: q, $options: 'i' } },
+          { posterName: { $regex: q, $options: 'i' } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const total = await Advertisement.countDocuments(query);
@@ -208,7 +230,9 @@ const postAd = async (req, res) => {
       finalImageUrls = [...finalImageUrls, ...resolvedUrls.filter(Boolean)];
     }
 
-    if (finalImageUrls.length === 0) {
+    const isCinemaCard = req.body.isCinemaCard === true || req.body.isCinemaCard === 'true' || (category && /cinema\s*card/i.test(category));
+
+    if (finalImageUrls.length === 0 && !isCinemaCard) {
       finalImageUrls = ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800'];
     }
 
@@ -231,8 +255,6 @@ const postAd = async (req, res) => {
       propertySubType = 'CINEMA CARD';
       mainCategory = 'CINEMA CARD';
     }
-
-    const isCinemaCard = req.body.isCinemaCard === true || req.body.isCinemaCard === 'true' || (category && /cinema\s*card/i.test(category));
     const realPosterName = (req.body.applicantName || posterName || req.body.name || req.user?.name || 'Applicant').trim() || 'Applicant';
     const realPosterPhone = (req.body.whatsappNumber || posterPhone || req.body.phone || req.user?.phone || '').trim();
     const realPosterId = (posterId || req.user?.userId || req.user?.id || 'USR-8821').trim() || 'USR-8821';
