@@ -40,6 +40,17 @@ export const adsApi = {
     });
   },
 
+  uploadCinemaCardImage: async (id, fileOrBase64) => {
+    if (typeof fileOrBase64 === 'string' && (fileOrBase64.startsWith('http') || fileOrBase64.startsWith('data:'))) {
+      return await axiosClient.post(`/api/v1/admin/ads/${id}/cinema-card-image`, { image: fileOrBase64 });
+    }
+    const formData = new FormData();
+    formData.append('image', fileOrBase64);
+    return await axiosClient.post(`/api/v1/admin/ads/${id}/cinema-card-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
   unpublishAd: async (id) => {
     return await axiosClient.patch(`/api/v1/admin/ads/${id}/unpublish`);
   },
