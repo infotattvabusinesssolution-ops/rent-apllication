@@ -259,11 +259,18 @@ export const AdsList = () => {
                       <tr key={ad.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={ad.imageUrls[0]}
-                              alt=""
-                              className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
-                            />
+                            {ad.imageUrls?.[0] ? (
+                              <img
+                                src={ad.imageUrls[0]}
+                                alt=""
+                                className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-amber-50 border border-amber-200 flex flex-col items-center justify-center text-amber-700 font-bold text-[9px] shrink-0">
+                                <span>🎬</span>
+                                <span>No Img</span>
+                              </div>
+                            )}
                             <div className="min-w-0">
                               <span className="text-[10px] font-bold text-blue-600 tracking-wider uppercase">
                                 #{ad.id}
@@ -428,11 +435,18 @@ export const AdsList = () => {
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <img
-                          src={ad.imageUrls[0]}
-                          alt=""
-                          className="w-14 h-14 rounded-lg object-cover border border-slate-200 shrink-0"
-                        />
+                        {ad.imageUrls?.[0] ? (
+                          <img
+                            src={ad.imageUrls[0]}
+                            alt=""
+                            className="w-14 h-14 rounded-lg object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-amber-50 border border-amber-200 flex flex-col items-center justify-center text-amber-700 font-bold text-[10px] shrink-0">
+                            <span>🎬</span>
+                            <span>No Img</span>
+                          </div>
+                        )}
                         <div>
                           <span className="text-[10px] font-bold text-blue-600">#{ad.id}</span>
                           <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{ad.title}</h4>

@@ -31,6 +31,8 @@ import {
   ArrowLeft,
   Gift,
   Upload,
+  UploadCloud,
+  Sparkles,
 } from 'lucide-react';
 
 export const AdDetail = () => {
@@ -101,6 +103,18 @@ export const AdDetail = () => {
     },
   });
 
+  const uploadCinemaImageMutation = useMutation({
+    mutationFn: (file) => adsApi.uploadCinemaCardImage(id, file),
+    onSuccess: (res) => {
+      toast.success('Cinema Card official image uploaded & approved! Live in all app listings. 🎉');
+      queryClient.invalidateQueries(['adDetail', id]);
+      queryClient.invalidateQueries(['ads']);
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to upload Cinema Card image');
+    },
+  });
+
   const unpublishMutation = useMutation({
     mutationFn: () => adsApi.unpublishAd(id),
     onSuccess: () => {
@@ -167,37 +181,71 @@ export const AdDetail = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Gallery Card */}
           <Card>
-            <div className="relative group rounded-xl overflow-hidden bg-slate-900 aspect-video mb-3">
-              <img
-                src={ad.imageUrls[selectedImageIdx] || ad.imageUrls[0]}
-                alt={ad.title}
-                className="w-full h-full object-cover"
-              />
-              <button
-                onClick={() => setLightboxOpen(true)}
-                className="absolute top-4 right-4 bg-slate-900/70 hover:bg-slate-900 text-white p-2 rounded-xl backdrop-blur-xs flex items-center gap-1 text-xs font-semibold transition-all opacity-90 hover:opacity-100 cursor-pointer"
-              >
-                <Maximize2 className="w-4 h-4" />
-                <span>Fullscreen View</span>
-              </button>
-            </div>
-
-            {/* Thumbnail Navigation */}
-            {ad.imageUrls.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-1">
-                {ad.imageUrls.map((url, idx) => (
+            {ad.imageUrls && ad.imageUrls.length > 0 ? (
+              <>
+                <div className="relative group rounded-xl overflow-hidden bg-slate-900 aspect-video mb-3">
                   <img
-                    key={idx}
-                    src={url}
-                    alt=""
-                    onClick={() => setSelectedImageIdx(idx)}
-                    className={`w-20 h-16 object-cover rounded-lg cursor-pointer border-2 transition-all ${
-                      idx === selectedImageIdx
-                        ? 'border-blue-600 scale-105 shadow-md'
-                        : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
+                    src={ad.imageUrls[selectedImageIdx] || ad.imageUrls[0]}
+                    alt={ad.title}
+                    className="w-full h-full object-cover"
                   />
-                ))}
+                  <button
+                    onClick={() => setLightboxOpen(true)}
+                    className="absolute top-4 right-4 bg-slate-900/70 hover:bg-slate-900 text-white p-2 rounded-xl backdrop-blur-xs flex items-center gap-1 text-xs font-semibold transition-all opacity-90 hover:opacity-100 cursor-pointer"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    <span>Fullscreen View</span>
+                  </button>
+                </div>
+
+                {/* Thumbnail Navigation */}
+                {ad.imageUrls.length > 1 && (
+                  <div className="flex items-center gap-3 overflow-x-auto pb-1">
+                    {ad.imageUrls.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        alt=""
+                        onClick={() => setSelectedImageIdx(idx)}
+                        className={`w-20 h-16 object-cover rounded-lg cursor-pointer border-2 transition-all ${
+                          idx === selectedImageIdx
+                            ? 'border-blue-600 scale-105 shadow-md'
+                            : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-dashed border-amber-300 p-8 text-center space-y-3">
+                <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                  <UploadCloud className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    No Official Card Image Uploaded Yet
+                  </h3>
+                  <p className="text-xs text-slate-600 max-w-md mx-auto mt-1">
+                    Applicant submitted registration details without photo. Please upload the official card graphic or photo below to approve and publish this card to all mobile app listings.
+                  </p>
+                </div>
+                <div>
+                  <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md transition-all">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadCinemaImageMutation.isPending}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadCinemaImageMutation.mutate(file);
+                      }}
+                    />
+                    <UploadCloud className="w-4 h-4" />
+                    <span>{uploadCinemaImageMutation.isPending ? 'Uploading to CDN...' : 'Upload Official Card Image'}</span>
+                  </label>
+                </div>
               </div>
             )}
           </Card>
@@ -553,6 +601,41 @@ export const AdDetail = () => {
               )}
 
               <hr className="border-slate-200 my-4" />
+
+              {/* Official Cinema Card Image Upload Panel */}
+              {(ad.category === 'CINEMA CARD' || ad.category?.toUpperCase() === 'CINEMA CARD' || ad.isCinemaCard) && (
+                <div className="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-300 space-y-2.5 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      Official Cinema Card Image
+                    </span>
+                    {ad.imageUrls && ad.imageUrls.length > 0 && ad.status === 'APPROVED' && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Live in App
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    Admin uploads the official card graphic here to approve and display it across all mobile app listings.
+                  </p>
+                  <label className="w-full py-2.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadCinemaImageMutation.isPending}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadCinemaImageMutation.mutate(file);
+                      }}
+                    />
+                    <UploadCloud className="w-4 h-4" />
+                    <span>{uploadCinemaImageMutation.isPending ? 'Uploading to CDN...' : (ad.imageUrls?.length > 0 ? 'Change / Replace Card Image' : 'Upload Card Image & Publish to App')}</span>
+                  </label>
+                </div>
+              )}
 
               {/* Promotional Badges Control */}
               <div className="space-y-2">
