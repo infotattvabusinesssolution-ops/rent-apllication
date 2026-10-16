@@ -28,6 +28,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { Dropdown } from '../components/ui/Dropdown';
+import { Pagination } from '../components/ui/Pagination';
 
 export const AdsList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,6 +38,8 @@ export const AdsList = () => {
   const currentTab = searchParams.get('tab') || 'ALL';
   const categoryFilter = searchParams.get('category') || 'ALL';
   const searchQuery = searchParams.get('search') || '';
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const limitParam = searchParams.get('limit') || '50';
 
   const [rejectingAd, setRejectingAd] = useState(null);
   const [deletingAdId, setDeletingAdId] = useState(null);
@@ -48,7 +51,7 @@ export const AdsList = () => {
   });
 
   const { data: adsResult, isLoading } = useQuery({
-    queryKey: ['ads', currentTab, categoryFilter, searchQuery],
+    queryKey: ['ads', currentTab, categoryFilter, searchQuery, page, limitParam],
     queryFn: () =>
       adsApi.getAds({
         status: ['PENDING', 'APPROVED', 'REJECTED', 'UNPUBLISHED'].includes(currentTab) ? currentTab : 'ALL',
@@ -56,6 +59,8 @@ export const AdsList = () => {
         isHighDemand: currentTab === 'HIGH_DEMAND',
         category: categoryFilter,
         search: searchQuery,
+        page,
+        limit: limitParam === 'ALL' ? 'all' : limitParam,
       }),
     refetchInterval: 3000,
   });
@@ -147,6 +152,7 @@ export const AdsList = () => {
             key={tab.id}
             onClick={() => {
               searchParams.set('tab', tab.id);
+              searchParams.set('page', '1');
               setSearchParams(searchParams);
             }}
             className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 whitespace-nowrap flex items-center gap-2 cursor-pointer ${
@@ -174,6 +180,7 @@ export const AdsList = () => {
           onChange={(val) => {
             if (val) searchParams.set('search', val);
             else searchParams.delete('search');
+            searchParams.set('page', '1');
             setSearchParams(searchParams);
           }}
           className="w-full md:w-80"
@@ -185,6 +192,7 @@ export const AdsList = () => {
             onChange={(e) => {
               if (e.target.value !== 'ALL') searchParams.set('category', e.target.value);
               else searchParams.delete('category');
+              searchParams.set('page', '1');
               setSearchParams(searchParams);
             }}
             className="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -195,6 +203,21 @@ export const AdsList = () => {
                 {cat}
               </option>
             ))}
+          </select>
+
+          <select
+            value={limitParam}
+            onChange={(e) => {
+              searchParams.set('limit', e.target.value);
+              searchParams.set('page', '1');
+              setSearchParams(searchParams);
+            }}
+            className="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+            <option value="ALL">Show All Listings</option>
           </select>
         </div>
       </div>
@@ -456,6 +479,28 @@ export const AdsList = () => {
               );
             })}
           </div>
+
+          {/* Pagination Controls */}
+          {limitParam !== 'ALL' && (adsResult?.pagination?.pages > 1 || adsResult?.totalPages > 1) && (
+            <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs">
+              <Pagination
+                currentPage={page}
+                totalPages={adsResult?.pagination?.pages || adsResult?.totalPages || 1}
+                totalItems={adsResult?.total || adsResult?.pagination?.total || adsList.length}
+                pageSize={parseInt(limitParam, 10) || 50}
+                onPageChange={(p) => {
+                  searchParams.set('page', p.toString());
+                  setSearchParams(searchParams);
+                }}
+              />
+            </div>
+          )}
+
+          {limitParam === 'ALL' && adsList.length > 0 && (
+            <div className="text-center py-2 text-xs font-semibold text-slate-500">
+              Showing all {adsList.length} marketplace listings
+            </div>
+          )}
         </>
       )}
 
